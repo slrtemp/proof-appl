@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="proof-mark-gradient" x1="8" x2="56" y1="8" y2="56" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#818CF8"/>
+      <stop offset="1" stop-color="#4F46E5"/>
+    </linearGradient>
+  </defs>
+  <rect x="2" y="2" width="60" height="60" rx="19" fill="url(#proof-mark-gradient)"/>
+  <rect x="2.75" y="2.75" width="58.5" height="58.5" rx="18.25" fill="none" stroke="#fff" stroke-opacity=".2" stroke-width="1.5"/>
+  <path d="M21 46V17h14a9 9 0 0 1 0 18H21" fill="none" stroke="#fff" stroke-linecap="round" stroke-linejoin="round" stroke-width="4"/>
+  <path d="m34 43 4.5 4.5L48 36" fill="none" stroke="#fff" stroke-linecap="round" stroke-linejoin="round" stroke-width="4"/>
+</svg>

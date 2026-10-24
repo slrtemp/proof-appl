@@ -1,0 +1,34 @@
+Absolutely — here’s a simple Python version:
+
+```
+questions = [
+    ("Am I 18?", True),
+    ("Do I go to Wentworth?", True),
+    ("Have I run a marathon?", False),
+    ("Am I a twin?", True),
+    ("Do I have a dog?", False)
+]
+
+score = 0
+
+print("🎮 True or False: How Well Do You Know Me?")
+print()
+
+for question, answer in questions:
+    user_answer = input(question + " (True/False): ").strip().lower()
+
+    if (user_answer == "true") == answer:
+        print("✅ Correct!")
+        score += 1
+    else:
+        print("❌ Wrong!")
+
+    print()
+
+print(f"Game over! You got {score}/{len(questions)} correct!")
+```
+
+ You can run this directly in Python, and the player types **True** or **False** for each question.
+
+
+ int(input(""))
