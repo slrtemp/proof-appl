@@ -6,23 +6,23 @@ import { Github, Mail } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
+import { getAuthRedirectUrl, getSafeInternalPath } from "@/lib/site-url";
 
-function getAuthRedirectUrl() {
-  const redirectUrl = new URL(
-    "/auth/callback",
-    process.env.NEXT_PUBLIC_APP_URL || window.location.origin,
-  );
-  redirectUrl.searchParams.set("next", "/");
-  return redirectUrl.toString();
-}
-
-export function LoginForm({ errorCode }: { errorCode?: string }) {
+export function LoginForm({ errorCode, nextPath = "/" }: { errorCode?: string; nextPath?: string }) {
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [busyProvider, setBusyProvider] = useState<"github" | "google" | null>(null);
   const configured = Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
+  const safeNextPath = getSafeInternalPath(nextPath);
+  const callbackError = errorCode === "auth-not-configured"
+    ? "Sign-in is not configured yet. Please try again later."
+    : errorCode === "auth-provider"
+      ? "Google or GitHub could not complete sign-in. Check the provider setup and try again."
+      : errorCode
+        ? "That sign-in link could not be completed. Request a new link and try again."
+        : "";
 
   async function sendLink(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -44,7 +44,7 @@ export function LoginForm({ errorCode }: { errorCode?: string }) {
       const { error: authError } = await supabase.auth.signInWithOtp({
         email,
         options: {
-          emailRedirectTo: getAuthRedirectUrl(),
+          emailRedirectTo: getAuthRedirectUrl(safeNextPath),
           shouldCreateUser: true,
         },
       });
@@ -70,7 +70,7 @@ export function LoginForm({ errorCode }: { errorCode?: string }) {
       if (!supabase) throw new Error("Supabase is not configured.");
       const { error: authError } = await supabase.auth.signInWithOAuth({
         provider,
-        options: { redirectTo: getAuthRedirectUrl() },
+        options: { redirectTo: getAuthRedirectUrl(safeNextPath) },
       });
       if (authError) throw authError;
     } catch (authError) {
@@ -84,7 +84,7 @@ export function LoginForm({ errorCode }: { errorCode?: string }) {
       <p className="text-xs font-medium text-muted">YOUR WORK, REMEMBERED</p>
       <h1 className="mt-3 text-3xl font-semibold tracking-[-0.06em]">Sign in or create your account.</h1>
       <p className="mt-2 text-sm leading-6 text-muted">Choose Google, GitHub, or a private email link. New here? We’ll create your account as you continue.</p>
-      {errorCode && <p className="mt-4 rounded-control border border-red-300/20 bg-red-300/5 p-3 text-xs text-red-200" role="alert">{errorCode === "auth-not-configured" ? "Sign-in is not configured yet." : "That sign-in link could not be completed. Try again."}</p>}
+      {callbackError && <p className="mt-4 rounded-control border border-red-300/20 bg-red-300/5 p-3 text-xs text-red-200" role="alert">{callbackError}</p>}
       <div className="mt-6 grid gap-2">
         <Button disabled={busy || busyProvider !== null} onClick={() => oauth("github")} type="button" variant="secondary"><Github size={16} />{busyProvider === "github" ? "Opening GitHub…" : "Continue with GitHub"}</Button>
         <Button disabled={busy || busyProvider !== null} onClick={() => oauth("google")} type="button" variant="secondary"><span aria-hidden="true" className="text-base font-semibold">G</span>{busyProvider === "google" ? "Opening Google…" : "Continue with Google"}</Button>

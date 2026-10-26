@@ -6,7 +6,7 @@ import { LoginForm } from "@/components/login-form";
 import { ProofMark } from "@/components/proof-mark";
 import { createClient } from "@/lib/supabase/server";
 
-export default async function LoginPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
+export default async function LoginPage({ searchParams }: { searchParams: Promise<{ error?: string; next?: string }> }) {
   const params = await searchParams;
   const supabase = await createClient();
   if (supabase) {
@@ -24,7 +24,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
           <p className="mt-4 max-w-sm text-sm leading-6 text-muted">Keep a simple daily record. Your progress deserves a place to live.</p>
           <Link className="mt-7 inline-flex min-h-11 items-center text-sm text-muted transition-colors hover:text-foreground" href="/alex-morgan">See a public profile <span aria-hidden="true" className="ml-2">↗</span></Link>
         </div>
-        <LoginForm errorCode={params.error} />
+        <LoginForm errorCode={params.error} nextPath={params.next} />
       </main>
     </AppShell>
   );

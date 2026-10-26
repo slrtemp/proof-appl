@@ -2,10 +2,10 @@ import type { Metadata } from "next";
 
 import "./globals.css";
 
-const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+import { getSiteUrl } from "@/lib/site-url";
 
 export const metadata: Metadata = {
-  metadataBase: new URL(appUrl),
+  metadataBase: new URL(getSiteUrl()),
   title: {
     default: "Proof — Make your work visible",
     template: "%s · Proof",
