@@ -1,6 +1,13 @@
 import type { NextConfig } from "next";
 
+// The Supabase URL is public. Fall back to the project URL if the env var is missing or points at supabase.com.
+const configuredSupabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
+const supabaseUrl = /^https:\/\/[a-z0-9]+\.supabase\.co\/?$/.test(configuredSupabaseUrl)
+  ? configuredSupabaseUrl.replace(/\/$/, "")
+  : "https://ertmrtejmcuvhojyripf.supabase.co";
+
 const nextConfig: NextConfig = {
+  env: { NEXT_PUBLIC_SUPABASE_URL: supabaseUrl },
   poweredByHeader: false,
   async headers() {
     const contentSecurityPolicy = [
