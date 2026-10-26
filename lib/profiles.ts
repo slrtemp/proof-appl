@@ -13,7 +13,7 @@ export const getPublicProfile = cache(async (username: string): Promise<{ profil
   if (!supabase) return null;
   const { data: profile, error: profileError } = await supabase
     .from("profiles")
-    .select("id,username,full_name,tagline,bio,location,website,avatar_url,is_pro,is_verified,created_at")
+    .select("id,username,full_name,tagline,bio,location,website,avatar_url,is_verified,created_at")
     .eq("username", username)
     .eq("is_public", true)
     .maybeSingle();
@@ -23,6 +23,14 @@ export const getPublicProfile = cache(async (username: string): Promise<{ profil
     throw new Error("Could not load this public profile.");
   }
   if (!profile) return null;
+
+  const { data: isPro, error: billingError } = await supabase.rpc("is_public_pro_profile", {
+    profile_username: username,
+  });
+  if (billingError) {
+    console.error("Could not load the public Proof billing status.", billingError);
+    throw new Error("Could not load this public profile.");
+  }
 
   const { data: ships, error: shipsError } = await supabase
     .from("ships")
@@ -35,5 +43,5 @@ export const getPublicProfile = cache(async (username: string): Promise<{ profil
     console.error("Could not load public Proof ships.", shipsError);
     throw new Error("Could not load this shipping timeline.");
   }
-  return { profile, ships: ships ?? [] };
+  return { profile: { ...profile, is_pro: isPro } as Profile, ships: ships ?? [] };
 });

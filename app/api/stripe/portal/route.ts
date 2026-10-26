@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
 
 import { getStripe } from "@/lib/stripe";
+import { getSiteUrl } from "@/lib/site-url";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
-export async function POST(request: Request) {
+export async function POST() {
   const stripe = getStripe();
   const supabase = await createClient();
   const admin = createAdminClient();
@@ -23,7 +24,7 @@ export async function POST(request: Request) {
   }
   if (!subscription?.stripe_customer_id) return NextResponse.json({ error: "No billing customer was found for this account." }, { status: 404 });
 
-  const origin = process.env.NEXT_PUBLIC_APP_URL || new URL(request.url).origin;
+  const origin = getSiteUrl();
   let portal: Awaited<ReturnType<typeof stripe.billingPortal.sessions.create>>;
   try {
     portal = await stripe.billingPortal.sessions.create({

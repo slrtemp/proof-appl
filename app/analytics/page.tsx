@@ -7,6 +7,7 @@ import { AppShell } from "@/components/app-shell";
 import { DEMO_SHIPS } from "@/lib/demo";
 import { createClient } from "@/lib/supabase/server";
 import type { Ship } from "@/lib/types";
+import { getUserSubscription, hasProAccess } from "@/lib/billing";
 
 export default async function AnalyticsPage() {
   const supabase = await createClient();
@@ -16,15 +17,15 @@ export default async function AnalyticsPage() {
   if (supabase) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) redirect("/login");
-    const [{ data: profile, error: profileError }, { data: accountShips, error: shipsError }] = await Promise.all([
-      supabase.from("profiles").select("is_pro").eq("id", user.id).single(),
+    const [{ data: accountShips, error: shipsError }, subscription] = await Promise.all([
       supabase.from("ships").select("id,user_id,body,category,link,shipped_on,created_at").eq("user_id", user.id).order("shipped_on", { ascending: false }).limit(1000),
+      getUserSubscription(user.id),
     ]);
-    if (profileError || shipsError) {
-      console.error("Could not load Proof analytics.", profileError || shipsError);
+    if (shipsError) {
+      console.error("Could not load Proof analytics.", shipsError);
       throw new Error("Could not load analytics.");
     }
-    isPro = profile.is_pro;
+    isPro = hasProAccess(subscription);
     ships = (accountShips ?? []) as Ship[];
   }
 

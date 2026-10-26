@@ -42,14 +42,78 @@ create index if not exists ships_user_shipped_on_idx
 create table if not exists public.subscriptions (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null unique references public.profiles (id) on delete cascade,
-  stripe_customer_id text not null unique,
+  stripe_customer_id text unique,
   stripe_subscription_id text unique,
+  plan text not null default 'free' check (plan in ('free', 'pro')),
+  billing_interval text check (billing_interval is null or billing_interval in ('monthly', 'yearly')),
+  founder_access boolean not null default false,
   status text not null default 'incomplete',
   price_id text,
   current_period_end timestamptz,
   cancel_at_period_end boolean not null default false,
-  updated_at timestamptz not null default now()
+  updated_at timestamptz not null default now(),
+  last_event_created bigint not null default 0
 );
+
+alter table public.subscriptions
+  add column if not exists plan text not null default 'free' check (plan in ('free', 'pro')),
+  add column if not exists billing_interval text check (billing_interval is null or billing_interval in ('monthly', 'yearly')),
+  add column if not exists founder_access boolean not null default false,
+  add column if not exists last_event_created bigint not null default 0;
+
+alter table public.subscriptions alter column stripe_customer_id drop not null;
+
+update public.subscriptions
+set plan = case
+  when status in ('active', 'trialing', 'past_due')
+    or (status = 'canceled' and current_period_end > now())
+  then 'pro'
+  else 'free'
+end
+where plan = 'free';
+
+update public.subscriptions
+set founder_access = true, plan = 'pro'
+where user_id in (select id from public.profiles where is_founder);
+
+insert into public.subscriptions (user_id, plan, status, founder_access)
+select profile.id, 'pro', 'active', true
+from public.profiles as profile
+where profile.is_founder
+  and not exists (
+    select 1 from public.subscriptions as subscription
+    where subscription.user_id = profile.id
+  );
+
+create table if not exists public.stripe_webhook_events (
+  event_id text primary key,
+  event_type text not null,
+  processed_at timestamptz not null default now()
+);
+
+create or replace function public.is_public_pro_profile(profile_username text)
+returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select exists (
+    select 1
+    from public.profiles as profile
+    join public.subscriptions as subscription on subscription.user_id = profile.id
+    where profile.username = profile_username
+      and profile.is_public
+      and subscription.plan = 'pro'
+      and (
+        subscription.founder_access
+        or
+        (subscription.status in ('active', 'trialing') and subscription.current_period_end > now())
+        or (subscription.status = 'past_due' and subscription.current_period_end + interval '7 days' > now())
+        or (subscription.status = 'canceled' and subscription.current_period_end > now())
+      )
+  );
+$$;
 
 create or replace function public.handle_new_user()
 returns trigger
@@ -111,6 +175,7 @@ create trigger profiles_set_updated_at
 alter table public.profiles enable row level security;
 alter table public.ships enable row level security;
 alter table public.subscriptions enable row level security;
+alter table public.stripe_webhook_events enable row level security;
 
 drop policy if exists "Public profiles are readable" on public.profiles;
 create policy "Public profiles are readable"
@@ -155,6 +220,10 @@ create policy "Owners read their subscriptions"
   on public.subscriptions for select
   using (user_id = (select auth.uid()));
 
+revoke all on public.stripe_webhook_events from anon, authenticated;
+revoke all on function public.is_public_pro_profile(text) from public;
+grant execute on function public.is_public_pro_profile(text) to anon, authenticated;
+revoke insert, update, delete on public.subscriptions from anon, authenticated;
 revoke all on public.profiles from anon, authenticated;
 grant select on public.profiles to anon, authenticated;
 grant update (username, full_name, tagline, bio, location, website, avatar_url, is_public) on public.profiles to authenticated;
@@ -166,6 +235,7 @@ grant insert, update, delete on public.ships to authenticated;
 revoke all on public.subscriptions from anon, authenticated;
 grant select on public.subscriptions to authenticated;
 grant all on public.profiles, public.ships, public.subscriptions to service_role;
+grant all on public.stripe_webhook_events to service_role;
 
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 values ('avatars', 'avatars', true, 5242880, array['image/jpeg', 'image/png', 'image/webp'])

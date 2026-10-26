@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+import { hasProAccess, type SubscriptionRecord } from "@/lib/billing";
 
 export async function PUT(request: Request) {
   const supabase = await createClient();
@@ -25,16 +26,16 @@ export async function PUT(request: Request) {
     return NextResponse.json({ error: "Enter a domain like ships.example.com." }, { status: 400 });
   }
 
-  const { data: profile, error: profileError } = await admin
-    .from("profiles")
-    .select("is_pro")
-    .eq("id", user.id)
-    .single();
-  if (profileError) {
-    console.error("Could not check Proof Pro access for domain update.", profileError);
+  const { data: billing, error: billingError } = await admin
+    .from("subscriptions")
+    .select("plan,billing_interval,founder_access,status,current_period_end,cancel_at_period_end,stripe_customer_id,stripe_subscription_id")
+    .eq("user_id", user.id)
+    .maybeSingle();
+  if (billingError) {
+    console.error("Could not check Proof Pro access for domain update.", billingError);
     return NextResponse.json({ error: "Pro access could not be checked." }, { status: 500 });
   }
-  if (!profile.is_pro) return NextResponse.json({ error: "A Proof Pro subscription is required for custom domains." }, { status: 403 });
+  if (!hasProAccess(billing as SubscriptionRecord | null)) return NextResponse.json({ error: "A Proof Pro subscription is required for custom domains." }, { status: 403 });
 
   const { error } = await admin.from("profiles").update({ custom_domain: customDomain || null }).eq("id", user.id);
   if (error) {
