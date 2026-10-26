@@ -3,13 +3,12 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Award, BarChart3, Check, Globe2, Palette, Sparkles, TreePine } from "lucide-react";
+import { Award, BarChart3, Check, Palette, Sparkles, TreePine } from "lucide-react";
 
 import { BillingButton, PortalButton } from "@/components/billing-button";
 import { Button } from "@/components/ui/button";
 
 const proFeatures = [
-  { icon: <Globe2 size={16} />, title: "Your own domain", description: "Put your public shipping log on your domain." },
   { icon: <BarChart3 size={16} />, title: "Premium shipping analytics", description: "Compare 30, 90, and 365-day trends, track consistency and weekly pace, explore category and weekday patterns, and export your history." },
   { icon: <Award size={16} />, title: "Builder levels & milestones", description: "Earn XP and unlock badges as your body of work grows." },
   { icon: <TreePine size={16} />, title: "Proof Tree canopy report", description: "See month-over-month growth, your strongest work lane, and the next milestone taking shape." },

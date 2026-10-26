@@ -55,8 +55,10 @@ async function syncSubscription(
     .from("profiles")
     .select("is_founder")
     .eq("id", userId)
-    .single();
+    .maybeSingle();
+  if (!profile && !profileError) return;
   if (profileError) throw new Error(`Could not check founder access: ${profileError.message}`);
+  if (!profile) return;
 
   const price = subscription.items.data[0]?.price;
   const planDetails = getPlanDetails(subscription);

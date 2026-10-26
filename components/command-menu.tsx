@@ -12,12 +12,14 @@ const actions = [
   { label: "View public profile", detail: "See your work in public", href: "/profile", icon: Flame },
   { label: "Plans and Pro", detail: "Manage your plan in settings", href: "/settings#plan", icon: Sparkles },
   { label: "Open settings", detail: "Profile and preferences", href: "/settings", icon: Settings2 },
+  { label: "Keyboard shortcuts", detail: "See available keyboard commands", action: "help", icon: Command },
 ];
 
 export function CommandMenu() {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [showHelp, setShowHelp] = useState(false);
   const router = useRouter();
   const filteredActions = useMemo(
     () => actions.filter((action) => `${action.label} ${action.detail}`.toLowerCase().includes(query.toLowerCase())),
@@ -35,7 +37,10 @@ export function CommandMenu() {
         event.preventDefault();
         setOpen((value) => !value);
       }
-      if (event.key === "Escape") setOpen(false);
+      if (event.key === "Escape") {
+        setOpen(false);
+        setShowHelp(false);
+      }
     };
     const trigger = document.querySelector("[data-command-trigger]");
     trigger?.addEventListener("click", openMenu);
@@ -56,6 +61,7 @@ export function CommandMenu() {
       router.push("/");
       window.setTimeout(() => window.dispatchEvent(new Event("proof:quick-log")), 250);
     }
+    if ("action" in action && action.action === "help") setShowHelp(true);
   }
 
   return (
@@ -132,6 +138,26 @@ export function CommandMenu() {
               <span>Proof command menu</span><span>↑↓ to navigate · Enter to select</span>
             </div>
           </motion.div>
+        </motion.div>
+      )}
+      {showHelp && (
+        <motion.div
+          animate={{ opacity: 1 }}
+          className="fixed inset-0 z-[70] flex items-start justify-center bg-black/65 px-4 pt-[20vh] backdrop-blur-sm"
+          exit={{ opacity: 0 }}
+          initial={{ opacity: 0 }}
+          onMouseDown={(event) => { if (event.target === event.currentTarget) setShowHelp(false); }}
+        >
+          <section aria-labelledby="keyboard-help-title" aria-modal="true" className="w-full max-w-[440px] rounded-card border border-white/[0.1] bg-[#111113] p-5 shadow-2xl shadow-black/50" role="dialog">
+            <h2 className="text-sm font-medium" id="keyboard-help-title">Keyboard shortcuts</h2>
+            <ul className="mt-4 space-y-3 text-xs text-muted">
+              <li className="flex justify-between gap-4"><span>Open or close quick actions</span><kbd>Ctrl/⌘K</kbd></li>
+              <li className="flex justify-between gap-4"><span>Save today’s ship</span><kbd>Ctrl/⌘Enter</kbd></li>
+              <li className="flex justify-between gap-4"><span>Navigate command results</span><kbd>↑ / ↓, then Enter</kbd></li>
+              <li className="flex justify-between gap-4"><span>Close menus</span><kbd>Escape</kbd></li>
+            </ul>
+            <button autoFocus className="mt-5 inline-flex min-h-11 w-full items-center justify-center rounded-control border border-white/[0.1] text-xs hover:bg-white/[0.04]" onClick={() => setShowHelp(false)} type="button">Close</button>
+          </section>
         </motion.div>
       )}
     </AnimatePresence>

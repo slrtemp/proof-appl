@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { Check, Copy, Download, Image as ImageIcon, LockKeyhole } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -63,6 +64,10 @@ export function ShareActions({ username, compact = false, isPro = false }: { use
 
   return (
     <div className="space-y-3">
+      <details className="rounded-control border border-white/[0.08] bg-background p-3">
+        <summary className="min-h-10 cursor-pointer py-2 text-xs font-medium text-muted">Preview share card</summary>
+        <Image alt={`Wide Proof share card for @${username}`} className="mt-2 h-auto w-full rounded-control border border-white/[0.08]" height={315} loading="lazy" src={cardPath("landscape")} unoptimized width={600} />
+      </details>
       {isPro ? (
         <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
           <label className="sr-only" htmlFor="share-theme">Share card theme</label>

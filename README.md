@@ -18,12 +18,12 @@ Proof is a Next.js App Router application for logging one thing you shipped each
 3. Copy `.env.example` to `.env.local` and add your Supabase project URL and anon/publishable key. Set `NEXT_PUBLIC_SITE_URL` to your local origin for local billing tests; leave it empty for browser-origin auth redirects.
 4. Run `npm run dev` and open [http://localhost:3000](http://localhost:3000).
 
-The dashboard uses realistic, seeded Alex Morgan demo data when Supabase is not configured. Demo entries are kept in this browser. The app never sends demo entries to a server. Visit `/welcome` for the product landing page; `/alex-morgan` is the sample public profile.
+The dashboard uses realistic, seeded Alex Morgan demo data when Supabase is not configured. Demo entries are kept in this browser. The app never sends demo entries to a server. Visit `/demo` for the seeded preview; `/alex-morgan` is the sample public profile.
 
 ## Configure Supabase Auth and Postgres
 
 1. Create a Supabase project.
-2. Run [`supabase/schema.sql`](./supabase/schema.sql) in the Supabase SQL Editor. It creates the profile/ship/subscription tables, RLS policies, and the public `avatars` storage bucket with per-user upload rules. For an existing installation, run [`supabase/migrations/20261025_part1_pro_billing.sql`](./supabase/migrations/20261025_part1_pro_billing.sql) to add authoritative subscription plan fields and webhook idempotency storage.
+2. Run [`supabase/schema.sql`](./supabase/schema.sql) in the Supabase SQL Editor. It creates the profile/ship/subscription tables, RLS policies, timezone-aware ship/rest-day RPCs, reporting/reminder tables, and the public `avatars` storage bucket with per-user upload rules. For an existing installation, run [`supabase/migrations/20261025_part1_pro_billing.sql`](./supabase/migrations/20261025_part1_pro_billing.sql) and then [`supabase/migrations/20261025_part2_trust_timezone.sql`](./supabase/migrations/20261025_part2_trust_timezone.sql).
 3. Add the project URL and anon/publishable key to `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
 4. Add the service role key to `SUPABASE_SERVICE_ROLE_KEY`. Keep this key server-only; never prefix it with `NEXT_PUBLIC_`.
 5. Configure Auth redirects as described in [Auth setup](#auth-setup). The canonical production origin is `https://www.tryproof.net`; the apex host permanently redirects to it.
@@ -45,6 +45,8 @@ Set the canonical URL and provider redirects consistently; a mismatch between ap
 - **Email sign-in/confirmation:** Supabase email links return to `/auth/callback` on `NEXT_PUBLIC_SITE_URL`; allow that callback in the redirect URL list.
 - Keep `SUPABASE_SERVICE_ROLE_KEY` server-only. It must not use a `NEXT_PUBLIC_` prefix.
 
+The migration adds timezone-aware daily ship logging, up to two rest days per calendar month, public-profile visibility controls, report storage, and reminder preferences. The ship and rest-day RPCs serialize changes against the account profile so a ship and rest day cannot both be recorded for the same local date. Profile reports are rate-limited in the database by an HMAC of the request IP; set the hosting platform to supply a trustworthy `x-forwarded-for` header.
+
 ## Configure Stripe
 
 1. Create recurring monthly ($8) and yearly ($60) Proof Pro prices in Stripe. For local testing, use Stripe test-mode prices.
@@ -62,9 +64,20 @@ Checkout and the billing portal require an authenticated Supabase user. A past-d
 - Set the Supabase project's site URL to your production origin and add production/local callback URLs to its redirect allow-list.
 - The public share image is `/api/cards/<username>?format=landscape` (1200×630) or `?format=portrait` (1080×1350). Public profiles expose a canonical `/[username]` URL and an Open Graph image.
 - Share cards use the included Proof theme by default. Pro accounts can select the mono/grid themes and remove Proof branding with the card controls.
-- The Pro custom-domain field saves the requested host. Pointing DNS, domain ownership verification, TLS provisioning, and custom-host routing must also be configured at the hosting provider before directing production users to it.
+- Review the generated [`/privacy`](./app/privacy/page.tsx), [`/terms`](./app/terms/page.tsx), and [`/support`](./app/support/page.tsx) content with qualified counsel and replace the support contact address before production.
 - The Proof Tree grows category-colored leaves from the shipping log and appears on the dashboard and public profile. Pro adds a monthly canopy report with month-over-month growth, strongest work lane, and next milestone alongside 30, 90, and 365-day shipping analytics, builder XP, levels, and milestone badges. Analytics do not track profile visitors.
 - Demo data is generated for the preview and not written to Supabase. A signed-in account starts with its own database-backed log.
+
+### Optional email reminders
+
+1. Set `RESEND_API_KEY` and a verified sender in `REMINDER_FROM_EMAIL`.
+2. Set a long random `CRON_SECRET` in the deployment environment.
+3. Schedule an hourly `POST` request to `/api/reminders/send` with the header `Authorization: Bearer <CRON_SECRET>`. The endpoint only sends during each opted-in user's 9 a.m. local hour and skips dates already shipped or marked as rest days.
+4. Users opt in from Settings and can unsubscribe through the one-click link included with each message. Reminder delivery requires a verified Resend sender and the scheduler; it is disabled by default.
+
+### Account data controls
+
+Signed-in users can export profile data and ships as JSON or CSV, and request account deletion from Settings. Deletion cancels an associated Stripe subscription before removing the Stripe customer, avatar files, and Supabase Auth account (related profile/log data cascade). Verify billing and retention requirements before enabling this workflow in production.
 
 ## Check the app
 
@@ -73,12 +86,4 @@ npm run typecheck
 npm run build
 ```
 
-The build and server-rendered public pages work without Supabase or Stripe credentials. Sign-in, account persistence, checkout, portal, and signed webhook delivery need real provider configuration for end-to-end testing.
-
-## Five improvements to make next
-
-1. Verify custom-domain ownership and automate DNS, TLS, and host routing.
-2. Add profile-visit and share-card impression analytics with privacy-conscious opt-in.
-3. Add account export, deletion, and data-retention controls.
-4. Add integration tests for auth, daily ship upserts, streak boundaries, and Stripe webhook events.
-5. Add configurable reminders and timezone-aware daily ship cutoffs.
+The build and server-rendered public pages work without Supabase or Stripe credentials. Sign-in, account persistence, checkout, portal, reminders, and signed webhook delivery need real provider configuration for end-to-end testing.

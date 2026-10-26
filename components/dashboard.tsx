@@ -11,11 +11,13 @@ import { Button } from "@/components/ui/button";
 import { ProofTree } from "@/components/proof-tree";
 import { getBuilderProgress } from "@/lib/gamification";
 import { dateLabel, getStreakStats } from "@/lib/streaks";
+import { getDateKey } from "@/lib/dates";
 import type { Profile, Ship, ShipCategory } from "@/lib/types";
 import { CATEGORIES, CATEGORY_COLORS } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 const DEMO_STORAGE_KEY = "proof-demo-ships-v1";
+const DEMO_REST_STORAGE_KEY = "proof-demo-rest-days-v1";
 const MAX_SHIP_LENGTH = 280;
 const CATEGORY_ICONS: Record<ShipCategory, LucideIcon> = {
   Code: Code2,
@@ -25,18 +27,76 @@ const CATEGORY_ICONS: Record<ShipCategory, LucideIcon> = {
   Learning: BookOpen,
 };
 
-export function Dashboard({ demoProfile, initialShips, isPro, hasBilling = false, billingNotice, demoMode }: { demoProfile: Profile; initialShips: Ship[]; isPro: boolean; hasBilling?: boolean; billingNotice?: string | null; demoMode: boolean }) {
-  const today = new Date().toISOString().slice(0, 10);
+export function Dashboard({
+  demoProfile,
+  initialShips,
+  initialRestDays = [],
+  isPro,
+  hasBilling = false,
+  billingNotice,
+  demoMode,
+  timeZone = "UTC",
+  todayKey,
+}: {
+  demoProfile: Profile;
+  initialShips: Ship[];
+  initialRestDays?: string[];
+  isPro: boolean;
+  hasBilling?: boolean;
+  billingNotice?: string | null;
+  demoMode: boolean;
+  timeZone?: string;
+  todayKey?: string;
+}) {
+  const [activeTimeZone, setActiveTimeZone] = useState(timeZone);
+  const today = activeTimeZone === timeZone && todayKey ? todayKey : getDateKey(new Date(), activeTimeZone);
   const initialTodayShip = initialShips.find((ship) => ship.shipped_on === today);
   const [ships, setShips] = useState(initialShips);
+  const [restDays, setRestDays] = useState(initialRestDays);
   const [body, setBody] = useState(initialTodayShip?.body ?? "");
   const [category, setCategory] = useState<ShipCategory | "">(initialTodayShip?.category ?? "");
   const [link, setLink] = useState(initialTodayShip?.link ?? "");
   const [toast, setToast] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [restSubmitting, setRestSubmitting] = useState(false);
   const [showLink, setShowLink] = useState(Boolean(initialTodayShip?.link));
   const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    const browserTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    if (!browserTimeZone || browserTimeZone === activeTimeZone) return;
+    if (demoMode) {
+      setActiveTimeZone(browserTimeZone);
+      return;
+    }
+    let cancelled = false;
+    void fetch("/api/profile/timezone", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ timeZone: browserTimeZone }),
+    }).then(async (response) => {
+      if (!response.ok) {
+        const result = await response.json() as { error?: string };
+        throw new Error(result.error || "Your timezone could not be updated.");
+      }
+      if (!cancelled) {
+        setActiveTimeZone(browserTimeZone);
+      }
+    }).catch((timezoneError: unknown) => {
+      console.error("Could not synchronize the Proof timezone.", timezoneError);
+      if (!cancelled) setError(timezoneError instanceof Error ? timezoneError.message : "Your timezone could not be updated.");
+    });
+    return () => { cancelled = true; };
+  }, [activeTimeZone, demoMode]);
+
+  useEffect(() => {
+    const todayShip = ships.find((ship) => ship.shipped_on === today);
+    setBody(todayShip?.body ?? "");
+    setCategory(todayShip?.category ?? "");
+    setLink(todayShip?.link ?? "");
+    setShowLink(Boolean(todayShip?.link));
+  }, [activeTimeZone, ships, today]);
 
   useEffect(() => {
     if (!demoMode) return;
@@ -52,6 +112,13 @@ export function Dashboard({ demoProfile, initialShips, isPro, hasBilling = false
             setCategory(savedTodayShip.category);
             setLink(savedTodayShip.link ?? "");
             setShowLink(Boolean(savedTodayShip.link));
+          }
+          const savedRestDays = window.localStorage.getItem(DEMO_REST_STORAGE_KEY);
+          if (savedRestDays) {
+            const parsedRestDays: unknown = JSON.parse(savedRestDays);
+            if (Array.isArray(parsedRestDays) && parsedRestDays.every((day) => typeof day === "string")) {
+              setRestDays(parsedRestDays);
+            }
           }
         }
       }
@@ -80,14 +147,56 @@ export function Dashboard({ demoProfile, initialShips, isPro, hasBilling = false
     () => [...ships].sort((a, b) => b.shipped_on.localeCompare(a.shipped_on) || b.created_at.localeCompare(a.created_at)),
     [ships],
   );
-  const stats = useMemo(() => getStreakStats(ships), [ships]);
+  const stats = useMemo(() => getStreakStats(ships, new Date(), restDays, activeTimeZone), [ships, restDays, activeTimeZone]);
   const builderProgress = useMemo(() => getBuilderProgress(ships, stats), [ships, stats]);
   const existingTodayShip = ships.find((ship) => ship.shipped_on === today);
+  const isRestDay = restDays.includes(today);
+
+  async function toggleRestDay() {
+    if (restSubmitting) return;
+    setError("");
+    const before = restDays;
+    const next = isRestDay ? restDays.filter((day) => day !== today) : [...restDays, today].sort();
+    if (demoMode && !isRestDay) {
+      const countThisMonth = restDays.filter((day) => day.slice(0, 7) === today.slice(0, 7)).length;
+      if (countThisMonth >= 2) {
+        setError("You’ve used this month’s two rest days.");
+        return;
+      }
+      if (existingTodayShip) {
+        setError("A ship is already logged for today.");
+        return;
+      }
+    }
+    setRestDays(next);
+    setRestSubmitting(true);
+    try {
+      if (demoMode) {
+        window.localStorage.setItem(DEMO_REST_STORAGE_KEY, JSON.stringify(next));
+      } else {
+        const response = await fetch("/api/rest-days", { method: isRestDay ? "DELETE" : "POST" });
+        if (!response.ok) {
+          const result = await response.json() as { error?: string };
+          throw new Error(result.error || "Your rest day could not be updated.");
+        }
+      }
+      setToast(isRestDay ? "Rest day removed." : "Rest day marked. Rest is part of the work.");
+    } catch (restError) {
+      setRestDays(before);
+      setError(restError instanceof Error ? restError.message : "Your rest day could not be updated.");
+    } finally {
+      setRestSubmitting(false);
+    }
+  }
 
   async function submitShip(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (submitting) return;
-    const cleanBody = body.trim();
+    const cleanBody = body.replace(/[\u0000-\u001F\u007F]/g, " ").trim();
+    if (isRestDay) {
+      setError("Today is marked as a rest day. Remove the rest day before logging a ship.");
+      return;
+    }
     if (!cleanBody) {
       setError("Add one sentence about what you shipped.");
       inputRef.current?.focus();
@@ -101,7 +210,7 @@ export function Dashboard({ demoProfile, initialShips, isPro, hasBilling = false
     let normalizedLink: string | null = null;
     if (link.trim()) {
       try {
-        const parsedLink = new URL(link.startsWith("http") ? link : `https://${link}`);
+        const parsedLink = new URL(/^https?:\/\//i.test(link.trim()) ? link.trim() : `https://${link.trim()}`);
         if (!["http:", "https:"].includes(parsedLink.protocol)) throw new Error("Unsupported link protocol.");
         normalizedLink = parsedLink.toString();
       } catch {
@@ -168,6 +277,12 @@ export function Dashboard({ demoProfile, initialShips, isPro, hasBilling = false
 
   return (
     <main className="mx-auto max-w-[1100px] px-5 py-8 sm:px-8 sm:py-10">
+      {demoMode && (
+        <aside className="mb-5 flex flex-col justify-between gap-3 rounded-card border border-indigo-200/[0.13] bg-surface p-4 sm:flex-row sm:items-center" aria-label="Demo account">
+          <p className="text-xs leading-5 text-muted"><span className="font-medium text-foreground">Demo mode.</span> This sample log is saved only in this browser.</p>
+          <Link className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-control bg-accent px-4 text-xs font-medium text-white hover:bg-[#7476ff]" href="/login">Create account to save this <ArrowRight size={13} /></Link>
+        </aside>
+      )}
       <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_300px] lg:gap-10">
         <div className="min-w-0 space-y-9">
           <section className="relative overflow-hidden rounded-card border border-white/[0.08] bg-gradient-to-br from-[#15151b] via-[#101012] to-[#101014] px-6 py-7 sm:px-8 sm:py-9">
@@ -175,7 +290,7 @@ export function Dashboard({ demoProfile, initialShips, isPro, hasBilling = false
             <div aria-hidden="true" className="pointer-events-none absolute -bottom-28 left-1/3 size-56 rounded-full bg-sky-400/[0.05] blur-3xl" />
             <div className="relative flex flex-col justify-between gap-6 sm:flex-row sm:items-end">
             <div>
-                <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.17em] text-indigo-200/75">{new Intl.DateTimeFormat("en", { weekday: "long", month: "long", day: "numeric" }).format(new Date())}</p>
+                <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.17em] text-indigo-200/75">{new Intl.DateTimeFormat("en", { weekday: "long", month: "long", day: "numeric", timeZone: "UTC" }).format(new Date(`${today}T12:00:00.000Z`))}</p>
                 <h1 className="max-w-xl text-[34px] font-semibold leading-[1.04] tracking-[-0.065em] sm:text-[44px]">Your progress,<br className="hidden sm:block" /> made visible.</h1>
                 <p className="mt-3 max-w-md text-sm leading-6 text-muted">One small ship at a time. Keep a record of the work that moves you forward.</p>
             </div>
@@ -210,6 +325,7 @@ export function Dashboard({ demoProfile, initialShips, isPro, hasBilling = false
               </div>
               <form onSubmit={submitShip}>
                 <label className="sr-only" htmlFor="ship-body">What moved forward today?</label>
+                {isRestDay && <p className="mb-3 rounded-control border border-white/[0.08] bg-background p-3 text-xs leading-5 text-muted" role="status">Today is marked as a rest day. You can remove it below if you want to log a ship instead.</p>}
                 <textarea
                 className="min-h-[112px] w-full resize-y rounded-card border border-white/[0.08] bg-[#0b0b0e]/80 px-4 py-3 text-sm leading-6 text-foreground placeholder:text-muted/70 transition-[border-color,box-shadow] focus:border-indigo-300/35 focus:outline-none focus:ring-4 focus:ring-indigo-400/[0.08]"
                 id="ship-body"
@@ -257,7 +373,7 @@ export function Dashboard({ demoProfile, initialShips, isPro, hasBilling = false
                   {showLink ? "Remove reference" : "Attach a reference"}
                 </button>
                 <span aria-live="polite" className={`ml-auto text-[11px] tabular-nums ${body.length > MAX_SHIP_LENGTH - 30 ? "text-amber-200" : "text-muted"}`}>{body.length}<span className="text-muted/60"> / {MAX_SHIP_LENGTH}</span></span>
-                <Button className="min-h-11 h-11 min-w-[142px] px-4 shadow-lg shadow-indigo-950/30" disabled={submitting || !body.trim()}>
+                <Button className="min-h-11 h-11 min-w-[142px] px-4 shadow-lg shadow-indigo-950/30" disabled={submitting || isRestDay || !body.trim()}>
                   {submitting ? "Saving…" : existingTodayShip ? "Update entry" : "Save today’s ship"}
                   {!submitting && <ArrowRight size={14} />}
                 </Button>
@@ -314,7 +430,7 @@ export function Dashboard({ demoProfile, initialShips, isPro, hasBilling = false
                       <p className="text-sm leading-6 text-foreground sm:text-[15px]">{ship.body}</p>
                       <div className="mt-3 flex flex-wrap items-center gap-2">
                         <span className="rounded-full border px-2.5 py-1 text-[10px] font-medium" style={{ color: CATEGORY_COLORS[ship.category], borderColor: `${CATEGORY_COLORS[ship.category]}40`, backgroundColor: `${CATEGORY_COLORS[ship.category]}12` }}>{ship.category}</span>
-                        {ship.link && <a className="inline-flex min-h-7 items-center gap-1.5 rounded-full border border-white/[0.08] px-2.5 text-[10px] text-muted transition-colors hover:border-white/[0.16] hover:text-foreground" href={ship.link} rel="noreferrer" target="_blank">View work <ArrowUpRight size={11} /></a>}
+                        {ship.link && <a className="inline-flex min-h-7 items-center gap-1.5 rounded-full border border-white/[0.08] px-2.5 text-[10px] text-muted transition-colors hover:border-white/[0.16] hover:text-foreground" href={ship.link} rel="noopener noreferrer ugc" target="_blank">View work <ArrowUpRight size={11} /></a>}
                       </div>
                     </div>
                   </motion.article>
@@ -338,7 +454,18 @@ export function Dashboard({ demoProfile, initialShips, isPro, hasBilling = false
               <StatCard label="Best streak" value={stats.longest} suffix="days" icon={<Sparkles className="text-amber-200/75" size={14} />} />
               <StatCard className="col-span-2" label="Total shipped" value={stats.total} suffix="ships logged" icon={<Check className="text-emerald-200/75" size={14} />} />
             </div>
-            <p className="mt-4 border-t border-white/[0.07] pt-3 text-[10px] leading-5 text-muted">A gentle record, not a score. Rest is part of the work.</p>
+            <div className="mt-4 border-t border-white/[0.07] pt-3">
+              <p className="text-[10px] leading-5 text-muted">A gentle record, not a score. Rest is part of the work.</p>
+              <button
+                className="mt-2 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-control border border-white/[0.08] px-3 text-xs text-muted transition-colors hover:border-white/[0.15] hover:text-foreground disabled:opacity-60"
+                disabled={restSubmitting}
+                onClick={() => void toggleRestDay()}
+                type="button"
+              >
+                {restSubmitting ? "Saving…" : isRestDay ? "Remove today’s rest day" : "Mark today as a rest day"}
+              </button>
+              <p className="mt-1 text-center text-[10px] text-muted">{restDays.filter((day) => day.slice(0, 7) === today.slice(0, 7)).length}/2 rest days used this month</p>
+            </div>
           </section>
 
           {billingNotice && <p className="rounded-card border border-amber-200/10 bg-amber-200/[0.04] p-4 text-xs leading-5 text-muted" role="status">{billingNotice}</p>}

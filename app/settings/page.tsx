@@ -6,6 +6,7 @@ import { SettingsForm } from "@/components/settings-form";
 import { DEMO_PROFILE } from "@/lib/demo";
 import { createClient } from "@/lib/supabase/server";
 import { getBillingNotice, getUserSubscription, hasProAccess, needsBillingPortal } from "@/lib/billing";
+import { ReminderSettings } from "@/components/reminder-settings";
 
 export default async function SettingsPage() {
   const supabase = await createClient();
@@ -14,7 +15,7 @@ export default async function SettingsPage() {
       <AppShell>
         <main className="mx-auto max-w-[760px] px-5 py-10 sm:px-8">
           <SettingsHeading />
-          <SettingsForm initial={{ id: null, username: DEMO_PROFILE.username, fullName: DEMO_PROFILE.full_name, tagline: DEMO_PROFILE.tagline, bio: DEMO_PROFILE.bio, location: DEMO_PROFILE.location, website: DEMO_PROFILE.website ?? "", avatarUrl: DEMO_PROFILE.avatar_url, customDomain: "", email: "", isPro: false }} />
+          <SettingsForm initial={{ id: null, username: DEMO_PROFILE.username, fullName: DEMO_PROFILE.full_name, tagline: DEMO_PROFILE.tagline, bio: DEMO_PROFILE.bio, location: DEMO_PROFILE.location, website: DEMO_PROFILE.website ?? "", avatarUrl: DEMO_PROFILE.avatar_url, email: "", isPro: false }} />
           <p className="mt-4 text-center text-xs text-muted">Demo settings save to this browser. <Link className="text-foreground underline underline-offset-4" href="/login">Sign in</Link> to keep settings with your account.</p>
         </main>
       </AppShell>
@@ -25,7 +26,7 @@ export default async function SettingsPage() {
   if (!user) redirect("/login");
   const { data: profile, error } = await supabase
     .from("profiles")
-    .select("id,username,full_name,tagline,bio,location,website,avatar_url,custom_domain")
+    .select("id,username,full_name,tagline,bio,location,website,avatar_url,is_public")
     .eq("id", user.id)
     .single();
   if (error) {
@@ -33,12 +34,22 @@ export default async function SettingsPage() {
     throw new Error("Could not load account settings.");
   }
   const subscription = await getUserSubscription(user.id);
+  const { data: reminder, error: reminderError } = await supabase
+    .from("account_reminders")
+    .select("enabled")
+    .eq("user_id", user.id)
+    .maybeSingle();
+  if (reminderError) {
+    console.error("Could not load Proof reminder preferences.", reminderError);
+    throw new Error("Could not load reminder preferences.");
+  }
 
   return (
     <AppShell>
       <main className="mx-auto max-w-[760px] px-5 py-10 sm:px-8">
         <SettingsHeading />
-        <SettingsForm initial={{ id: profile.id, username: profile.username, fullName: profile.full_name, tagline: profile.tagline ?? "", bio: profile.bio ?? "", location: profile.location ?? "", website: profile.website ?? "", avatarUrl: profile.avatar_url, customDomain: profile.custom_domain ?? "", email: user.email ?? "", isPro: hasProAccess(subscription), hasBilling: needsBillingPortal(subscription), billingNotice: getBillingNotice(subscription) }} />
+        <SettingsForm initial={{ id: profile.id, username: profile.username, fullName: profile.full_name, tagline: profile.tagline ?? "", bio: profile.bio ?? "", location: profile.location ?? "", website: profile.website ?? "", avatarUrl: profile.avatar_url, email: user.email ?? "", isPro: hasProAccess(subscription), isPublic: profile.is_public, hasBilling: needsBillingPortal(subscription), billingNotice: getBillingNotice(subscription) }} />
+        <ReminderSettings initialEnabled={reminder?.enabled ?? false} />
       </main>
     </AppShell>
   );

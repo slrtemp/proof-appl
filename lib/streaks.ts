@@ -1,4 +1,5 @@
 import type { Ship, StreakStats } from "@/lib/types";
+import { getDateKey } from "@/lib/dates";
 
 function shiftDate(day: string, offset: number): string {
   const date = new Date(`${day}T12:00:00.000Z`);
@@ -6,9 +7,9 @@ function shiftDate(day: string, offset: number): string {
   return date.toISOString().slice(0, 10);
 }
 
-export function getStreakStats(ships: Ship[], today = new Date()): StreakStats {
-  const days = new Set(ships.map((ship) => ship.shipped_on));
-  const todayKey = today.toISOString().slice(0, 10);
+export function getStreakStats(ships: Ship[], today = new Date(), restDays: string[] = [], timeZone = "UTC"): StreakStats {
+  const days = new Set([...ships.map((ship) => ship.shipped_on), ...restDays]);
+  const todayKey = getDateKey(today, timeZone);
   const startingDay = days.has(todayKey) ? todayKey : shiftDate(todayKey, -1);
 
   let current = 0;
@@ -33,8 +34,8 @@ export function getStreakStats(ships: Ship[], today = new Date()): StreakStats {
   return { current, longest, total: ships.length, days };
 }
 
-export function getHeatmapWeeks(_ships: Ship[], today = new Date()): string[][] {
-  const endKey = today.toISOString().slice(0, 10);
+export function getHeatmapWeeks(_ships: Ship[], today = new Date(), timeZone = "UTC"): string[][] {
+  const endKey = getDateKey(today, timeZone);
   const end = new Date(`${endKey}T12:00:00.000Z`);
   const start = new Date(end);
   start.setUTCDate(start.getUTCDate() - 363);
@@ -55,5 +56,5 @@ export function getHeatmapWeeks(_ships: Ship[], today = new Date()): string[][] 
 }
 
 export function dateLabel(date: string): string {
-  return new Intl.DateTimeFormat("en", { month: "short", day: "numeric" }).format(new Date(`${date}T12:00:00`));
+  return new Intl.DateTimeFormat("en", { month: "short", day: "numeric", timeZone: "UTC" }).format(new Date(`${date}T12:00:00.000Z`));
 }

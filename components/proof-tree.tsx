@@ -86,6 +86,10 @@ export function ProofTree({ ships }: { ships: Ship[] }) {
             </g>
           )}
         </svg>
+        <p className="sr-only">
+          Each leaf represents a logged ship. The leaf colors correspond to Code, Design, Marketing, Launch, and Learning.
+          {ships.length === 0 ? " The tree is ready for its first leaf." : ` There are ${ships.length} ships in this record.`}
+        </p>
       </div>
 
       <div className="mt-1 flex flex-wrap justify-center gap-x-4 gap-y-2 border-t border-white/[0.06] pt-3" aria-label="Tree leaf work categories">

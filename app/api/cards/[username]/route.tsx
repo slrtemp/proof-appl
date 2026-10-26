@@ -12,12 +12,12 @@ export async function GET(request: NextRequest, context: { params: Promise<{ use
   if (!/^[a-zA-Z0-9_-]{2,32}$/.test(username)) return new Response("Invalid username.", { status: 400 });
   const format = request.nextUrl.searchParams.get("format") === "portrait" ? "portrait" : "landscape";
   const demo = username.toLowerCase() === DEMO_PROFILE.username;
-  const data = demo ? { profile: DEMO_PROFILE, ships: DEMO_SHIPS } : await getPublicProfile(username);
+  const data = demo ? { profile: DEMO_PROFILE, ships: DEMO_SHIPS, restDays: [] } : await getPublicProfile(username);
   if (!data) return new Response("Public profile not found.", { status: 404 });
 
-  const { profile, ships } = data;
+  const { profile, ships, restDays } = data;
   const profileUrl = new URL(`/${profile.username}`, request.nextUrl.origin).toString();
-  const stats = getStreakStats(ships);
+  const stats = getStreakStats(ships, new Date(), restDays, profile.timezone || "UTC");
   const latestShip = [...ships].sort((a, b) => b.shipped_on.localeCompare(a.shipped_on) || b.created_at.localeCompare(a.created_at))[0];
   const portrait = format === "portrait";
   const requestedTheme = request.nextUrl.searchParams.get("theme");

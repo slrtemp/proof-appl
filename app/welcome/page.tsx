@@ -1,10 +1,13 @@
 import Link from "next/link";
+import Image from "next/image";
 import { ArrowRight, Check, Flame, Sparkles } from "lucide-react";
 
 import { AppShell } from "@/components/app-shell";
 import { DEMO_SHIPS } from "@/lib/demo";
 import { dateLabel, getStreakStats } from "@/lib/streaks";
 import { CATEGORY_COLORS } from "@/lib/types";
+import { ProofTree } from "@/components/proof-tree";
+import { getSiteUrl } from "@/lib/site-url";
 
 export default function WelcomePage() {
   const stats = getStreakStats(DEMO_SHIPS);
@@ -12,14 +15,29 @@ export default function WelcomePage() {
   return (
     <AppShell>
       <main className="mx-auto max-w-[1080px] px-5 py-12 sm:px-8 sm:py-20">
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "WebApplication",
+              name: "Proof",
+              url: getSiteUrl(),
+              description: "A calm daily log for indie makers, builders, designers, and students shipping things.",
+              applicationCategory: "ProductivityApplication",
+              offers: [{ "@type": "Offer", price: "0", priceCurrency: "USD" }],
+            }),
+          }}
+        />
         <section className="grid items-center gap-12 lg:grid-cols-[1fr_430px] lg:gap-16">
           <div>
             <p className="inline-flex min-h-8 items-center gap-2 rounded-full border border-indigo-300/15 bg-indigo-300/[0.06] px-3 text-[11px] font-medium text-indigo-100/80"><Sparkles size={13} /> A daily log for people who build</p>
             <h1 className="mt-6 max-w-[660px] text-[46px] font-semibold leading-[1.02] tracking-[-0.075em] sm:text-[64px]">The work behind<br />the win, <span className="bg-gradient-to-r from-[#c7d2fe] via-[#a5b4fc] to-[#c4b5fd] bg-clip-text text-transparent">remembered.</span></h1>
             <p className="mt-5 max-w-lg text-base leading-7 text-muted">Proof is a calm home for the work that usually goes unseen. Capture one small ship each day, watch your progress take shape, and share the story when you’re ready.</p>
+            <p className="mt-3 max-w-lg text-sm leading-6 text-muted">For indie makers, builders, designers, and students shipping things—one small step at a time.</p>
             <div className="mt-7 flex flex-wrap gap-3">
-              <Link className="inline-flex min-h-12 items-center gap-2 rounded-control bg-accent px-5 text-sm font-medium text-white shadow-lg shadow-indigo-950/40 transition-all hover:-translate-y-px hover:bg-[#7476ff]" href="/login">Start your free log <ArrowRight size={15} /></Link>
-              <Link className="inline-flex min-h-12 items-center gap-2 rounded-control border border-white/[0.1] px-5 text-sm font-medium text-foreground transition-colors hover:bg-white/[0.04]" href="/alex-morgan">See it in action</Link>
+              <Link className="inline-flex min-h-12 items-center gap-2 rounded-control bg-accent px-5 text-sm font-medium text-white shadow-lg shadow-indigo-950/40 transition-all hover:-translate-y-px hover:bg-[#7476ff]" href="/login">Start your tree <ArrowRight size={15} /></Link>
+              <Link className="inline-flex min-h-12 items-center gap-2 rounded-control border border-white/[0.1] px-5 text-sm font-medium text-foreground transition-colors hover:bg-white/[0.04]" href="/demo">Try the demo</Link>
             </div>
             <p className="mt-4 text-[11px] text-muted">Free for the essentials <span className="px-1.5 text-white/20">·</span> No card required</p>
           </div>
@@ -51,6 +69,39 @@ export default function WelcomePage() {
             <article className="rounded-card border border-white/[0.07] bg-white/[0.015] p-5 transition-colors hover:border-white/[0.12] hover:bg-white/[0.025]" key={number}><p className="text-[10px] font-medium tracking-[0.14em] text-indigo-200/70">{number} <span className="text-white/25">/ 03</span></p><h2 className="mt-4 text-base font-medium tracking-[-0.03em]">{title}</h2><p className="mt-2 text-sm leading-6 text-muted">{text}</p></article>
           ))}
         </section>
+        <section className="mt-16 grid gap-4 md:grid-cols-2" aria-label="Proof examples">
+          <ProofTree ships={DEMO_SHIPS} />
+          <div className="space-y-4">
+            <article className="rounded-card border border-white/[0.08] bg-surface p-5">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-indigo-200/70">A public profile</p>
+              <h2 className="mt-2 text-lg font-medium">A home for the journey, not just the launch.</h2>
+              <p className="mt-2 text-xs leading-5 text-muted">Share your profile, work archive, streaks, and growing Proof Tree when you’re ready.</p>
+              <Link className="mt-3 inline-flex min-h-10 items-center gap-2 text-xs text-foreground hover:text-muted" href="/alex-morgan">See the sample profile <ArrowRight size={13} /></Link>
+            </article>
+            <article className="overflow-hidden rounded-card border border-white/[0.08] bg-surface p-5">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-indigo-200/70">Share a small win</p>
+              <p className="mt-2 text-xs leading-5 text-muted">Make a wide card or a story-sized card from your public page.</p>
+              <Image alt="Example Proof share card for the Alex Morgan demo profile" className="mt-4 h-auto w-full rounded-control border border-white/[0.08]" height={315} loading="lazy" src="/api/cards/alex-morgan?format=landscape" unoptimized width={600} />
+            </article>
+          </div>
+        </section>
+        <section className="mt-16 rounded-card border border-white/[0.08] bg-surface p-5 sm:p-7" aria-labelledby="plans-summary">
+          <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+            <div><h2 className="text-lg font-medium" id="plans-summary">Free to start. Pro when it helps.</h2><p className="mt-2 max-w-xl text-sm leading-6 text-muted">Free includes the daily log, Proof Tree, public profile, and share cards. Pro adds deeper analytics, builder progression, monthly tree insights, and more share-card options.</p></div>
+            <Link className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-control border border-white/[0.1] px-4 text-xs font-medium hover:bg-white/[0.04]" href="/pricing">Compare plans <ArrowRight size={14} /></Link>
+          </div>
+        </section>
+        <section className="mt-16 grid gap-3 sm:grid-cols-2" aria-labelledby="faq-title">
+          <h2 className="text-xl font-medium sm:col-span-2" id="faq-title">A few common questions</h2>
+          {[
+            ["Do I have to post every day?", "No. Proof is a gentle record, not a score. Rest is part of the work."],
+            ["Can I try it before making an account?", "Yes. The demo runs in your browser and its sample log is not sent to a server."],
+            ["Who can see my ships?", "Ships on a public profile can be seen by anyone. Your account log is protected by account-level access rules."],
+            ["Can I cancel Pro?", "Yes. You can manage or cancel a subscription through the billing portal."],
+          ].map(([question, answer]) => (
+            <article className="rounded-card border border-white/[0.08] bg-surface p-4" key={question}><h3 className="text-sm font-medium">{question}</h3><p className="mt-2 text-xs leading-5 text-muted">{answer}</p></article>
+          ))}
+        </section>
         <section className="mt-16 overflow-hidden rounded-card border border-white/[0.08] bg-surface" aria-labelledby="founder-note-title">
           <div className="grid lg:grid-cols-[0.72fr_1.28fr]">
             <div className="flex flex-col justify-between border-b border-white/[0.08] bg-white/[0.02] p-6 sm:p-8 lg:border-b-0 lg:border-r">
@@ -73,7 +124,7 @@ export default function WelcomePage() {
         </section>
         <div className="mt-14 flex flex-col justify-between gap-4 rounded-card border border-white/[0.08] bg-surface p-6 sm:flex-row sm:items-center">
           <div><h2 className="text-lg font-medium tracking-[-0.04em]">Start with the thing you did today.</h2><p className="mt-1 text-sm text-muted">No backlog. No setup. Just one ship.</p></div>
-          <Link className="inline-flex min-h-11 items-center justify-center gap-2 rounded-control bg-accent px-4 text-sm font-medium text-white hover:bg-[#7476ff]" href="/login">Create your log <ArrowRight size={15} /></Link>
+          <Link className="inline-flex min-h-11 items-center justify-center gap-2 rounded-control bg-accent px-4 text-sm font-medium text-white hover:bg-[#7476ff]" href="/login">Start your tree <ArrowRight size={15} /></Link>
         </div>
       </main>
     </AppShell>

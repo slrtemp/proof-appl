@@ -30,6 +30,8 @@ export interface Profile {
   avatar_url: string | null;
   is_pro: boolean;
   is_verified: boolean;
+  timezone?: string;
+  is_public?: boolean;
   created_at: string;
 }
 
@@ -38,4 +40,11 @@ export interface StreakStats {
   longest: number;
   total: number;
   days: Set<string>;
+}
+
+export interface RestDay {
+  id: string;
+  user_id: string;
+  rest_on: string;
+  created_at: string;
 }

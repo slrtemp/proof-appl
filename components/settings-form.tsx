@@ -3,10 +3,11 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
-import { ArrowUpRight, Camera, Check, ExternalLink, LockKeyhole, LogOut, UserRound } from "lucide-react";
+import { ArrowUpRight, Camera, Check, ExternalLink, LogOut, UserRound } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 import { PortalButton } from "@/components/billing-button";
+import { AccountActions } from "@/components/account-actions";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
 
@@ -19,9 +20,9 @@ type SettingsValues = {
   location: string;
   website: string;
   avatarUrl: string | null;
-  customDomain: string;
   email: string;
   isPro: boolean;
+  isPublic?: boolean;
   billingNotice?: string | null;
   hasBilling?: boolean;
 };
@@ -45,7 +46,7 @@ export function SettingsForm({ initial }: { initial: SettingsValues }) {
     try {
       const stored = window.localStorage.getItem("proof-demo-profile-v1");
       if (!stored) return;
-      const profile = JSON.parse(stored) as { username?: unknown; fullName?: unknown; tagline?: unknown; bio?: unknown; location?: unknown; website?: unknown };
+      const profile = JSON.parse(stored) as { username?: unknown; fullName?: unknown; tagline?: unknown; bio?: unknown; location?: unknown; website?: unknown; isPublic?: unknown };
       setValues((current) => ({
         ...current,
         username: typeof profile.username === "string" ? profile.username : current.username,
@@ -54,6 +55,7 @@ export function SettingsForm({ initial }: { initial: SettingsValues }) {
         bio: typeof profile.bio === "string" ? profile.bio : current.bio,
         location: typeof profile.location === "string" ? profile.location : current.location,
         website: typeof profile.website === "string" ? profile.website : current.website,
+        isPublic: typeof profile.isPublic === "boolean" ? profile.isPublic : current.isPublic,
       }));
     } catch (loadError) {
       console.error("Could not load Proof demo settings.", loadError);
@@ -128,11 +130,6 @@ export function SettingsForm({ initial }: { initial: SettingsValues }) {
         return;
       }
     }
-    if (values.customDomain && !/^(?=.{4,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}$/i.test(values.customDomain)) {
-      setError("Enter a domain like ships.example.com.");
-      return;
-    }
-
     setBusy(true);
     const supabase = createClient();
     try {
@@ -156,6 +153,7 @@ export function SettingsForm({ initial }: { initial: SettingsValues }) {
           location: values.location.trim(),
           website,
           avatar_url: avatarUrl,
+          is_public: values.isPublic ?? true,
         }).eq("id", values.id);
         if (saveError) throw new Error(saveError.code === "23505" ? "That username is already taken." : saveError.message);
         setAvatarFile(null);
@@ -167,18 +165,8 @@ export function SettingsForm({ initial }: { initial: SettingsValues }) {
           bio: values.bio.trim(),
           location: values.location.trim(),
           website,
+          isPublic: values.isPublic ?? true,
         }));
-      }
-      if (values.isPro) {
-        const domainResponse = await fetch("/api/profile/domain", {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ customDomain: values.customDomain.trim() }),
-        });
-        if (!domainResponse.ok) {
-          const result = await domainResponse.json() as { error?: string };
-          throw new Error(result.error || "Your profile saved, but the domain could not be updated.");
-        }
       }
       setValues((current) => ({
         ...current,
@@ -235,15 +223,14 @@ export function SettingsForm({ initial }: { initial: SettingsValues }) {
           </div>
           <SettingsField label="Location" maxLength={60} onChange={(value) => update("location", value)} placeholder="City, country (optional)" value={values.location} />
           <SettingsField label="Website" maxLength={2048} onChange={(value) => update("website", value)} placeholder="yourwebsite.com" value={values.website} />
-          {values.isPro ? (
-            <SettingsField label="Custom domain" maxLength={253} onChange={(value) => update("customDomain", value)} placeholder="ships.example.com" value={values.customDomain} />
-          ) : (
-            <div className="rounded-control border border-white/[0.08] bg-background p-3.5">
-              <div className="flex items-center gap-2 text-xs font-medium"><LockKeyhole size={14} className="text-muted" /> Your own domain <span className="rounded-full bg-white/[0.07] px-2 py-0.5 text-[9px] text-muted">PRO</span></div>
-              <p className="mt-1.5 text-xs leading-5 text-muted">Put your shipping log on a domain you own. Included with Pro.</p>
-              <Link className="mt-2 inline-flex min-h-10 items-center gap-1 text-xs text-foreground hover:text-muted" href="/pricing">See Proof Pro <ArrowUpRight size={12} /></Link>
-            </div>
-          )}
+          <label className="flex min-h-11 items-center gap-3 rounded-control border border-white/[0.08] bg-background px-3 text-xs text-muted">
+            <input checked={values.isPublic ?? true} className="size-4 accent-white focus:ring-accent" onChange={(event) => {
+              setValues((current) => ({ ...current, isPublic: event.target.checked }));
+              setStatus("");
+              setError("");
+            }} type="checkbox" />
+            Show my public profile and ships to anyone with the link
+          </label>
         </div>
         {error && <p className="mt-4 text-xs text-red-300" role="alert">{error}</p>}
         {status && <p className="mt-4 inline-flex items-center gap-1.5 text-xs text-emerald-200" role="status"><Check size={13} />{status}</p>}
@@ -268,6 +255,7 @@ export function SettingsForm({ initial }: { initial: SettingsValues }) {
             </>
           )}
           {values.id && <Button className="ml-2" onClick={signOut} type="button" variant="ghost"><LogOut size={14} />Sign out</Button>}
+          {values.id && <AccountActions />}
         </div>
       </section>
     </div>

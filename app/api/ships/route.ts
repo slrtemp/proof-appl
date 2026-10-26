@@ -25,7 +25,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Send a valid ship." }, { status: 400 });
   }
   const payload = input as Record<string, unknown>;
-  const body = typeof payload.body === "string" ? payload.body.trim() : "";
+  const body = typeof payload.body === "string"
+    ? payload.body.replace(/[\u0000-\u001F\u007F]/g, " ").trim()
+    : "";
   const category = payload.category;
   const link = payload.link;
 
@@ -50,20 +52,16 @@ export async function POST(request: Request) {
     }
   }
 
-  const shippedOn = new Date().toISOString().slice(0, 10);
-  const { data: ship, error } = await supabase
-    .from("ships")
-    .upsert({
-      user_id: user.id,
-      body,
-      category: category ?? "Code",
-      link: normalizedLink,
-      shipped_on: shippedOn,
-    }, { onConflict: "user_id,shipped_on" })
-    .select("id,user_id,body,category,link,shipped_on,created_at")
-    .single();
+  const { data: ship, error } = await supabase.rpc("save_today_ship", {
+    ship_body: body,
+    ship_category: category ?? "Code",
+    ship_link: normalizedLink,
+  });
 
   if (error) {
+    if (error.message.includes("rest day")) {
+      return NextResponse.json({ error: "You marked today as a rest day. Remove the rest day before logging a ship." }, { status: 409 });
+    }
     console.error("Could not save ship.", error);
     return NextResponse.json({ error: "Your ship could not be saved. Please try again." }, { status: 500 });
   }

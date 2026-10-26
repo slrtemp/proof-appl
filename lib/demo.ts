@@ -7,7 +7,7 @@ export const DEMO_PROFILE: Profile = {
   tagline: "Making small tools for a more thoughtful internet.",
   bio: "Indie builder making small tools for a more thoughtful internet.",
   location: "Brooklyn, NY",
-  website: "https://example.com",
+  website: null,
   avatar_url: null,
   is_pro: false,
   is_verified: false,
@@ -57,8 +57,8 @@ const demoDays = [
 
 function dateDaysAgo(daysAgo: number): string {
   const date = new Date();
-  date.setHours(12, 0, 0, 0);
-  date.setDate(date.getDate() - daysAgo);
+  date.setUTCHours(12, 0, 0, 0);
+  date.setUTCDate(date.getUTCDate() - daysAgo);
   return date.toISOString().slice(0, 10);
 }
 
@@ -70,7 +70,7 @@ export function createDemoShips(): Ship[] {
       user_id: DEMO_PROFILE.id,
       body,
       category: category as ShipCategory,
-      link: index % 5 === 0 ? "https://example.com/shipped" : null,
+      link: null,
       shipped_on: shippedOn,
       created_at: `${shippedOn}T16:30:00.000Z`,
     };

@@ -8,6 +8,7 @@ import { ArrowLeft, ArrowUpRight, BadgeCheck, Check, Flame, Globe2, Layers3, Map
 import { AppShell } from "@/components/app-shell";
 import { ProofTree } from "@/components/proof-tree";
 import { ShareActions } from "@/components/share-actions";
+import { ProfileSafetyActions } from "@/components/profile-safety-actions";
 import { getPublicProfile } from "@/lib/profiles";
 import { dateLabel, getStreakStats } from "@/lib/streaks";
 import { CATEGORY_COLORS } from "@/lib/types";
@@ -19,8 +20,8 @@ export async function generateMetadata({ params }: ProfilePageProps): Promise<Me
   const data = await getPublicProfile(username);
   if (!data) return { title: "Builder not found" };
 
-  const { profile, ships } = data;
-  const stats = getStreakStats(ships);
+  const { profile, ships, restDays } = data;
+  const stats = getStreakStats(ships, new Date(), restDays, profile.timezone || "UTC");
   const title = `${profile.full_name} — ships in public`;
   const description = profile.bio || `${profile.tagline || "Building in public"}, with ${stats.total} ships and a ${stats.current}-day current streak. Follow ${profile.full_name}'s builder log on Proof.`;
   const image = `/api/cards/${encodeURIComponent(profile.username)}?format=landscape`;
@@ -38,13 +39,14 @@ export default async function PublicProfilePage({ params }: ProfilePageProps) {
   const data = await getPublicProfile(username);
   if (!data) notFound();
 
-  const { profile, ships } = data;
-  const stats = getStreakStats(ships);
+  const { profile, ships, restDays } = data;
+  const stats = getStreakStats(ships, new Date(), restDays, profile.timezone || "UTC");
   const categoryCount = new Set(ships.map((ship) => ship.category)).size;
   const sortedShips = [...ships].sort((a, b) => b.shipped_on.localeCompare(a.shipped_on) || b.created_at.localeCompare(a.created_at));
 
   return (
     <AppShell>
+      <ProfileSafetyActions username={profile.username}>
       <main className="mx-auto max-w-[900px] px-5 py-8 sm:px-8 sm:py-12">
         <Link className="mb-6 inline-flex min-h-10 items-center gap-2 rounded-full border border-white/[0.07] bg-white/[0.02] px-3.5 text-xs text-muted transition-colors hover:border-white/[0.14] hover:text-foreground" href="/">
           <ArrowLeft size={13} /> Back to Proof
@@ -74,7 +76,7 @@ export default async function PublicProfilePage({ params }: ProfilePageProps) {
               {(profile.location || profile.website) && (
                 <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-[11px] text-muted">
                   {profile.location && <span className="inline-flex items-center gap-1.5"><MapPin size={12} />{profile.location}</span>}
-                  {profile.website && <a className="inline-flex min-h-8 items-center gap-1.5 transition-colors hover:text-foreground" href={profile.website} rel="noreferrer" target="_blank"><Globe2 size={12} />{profile.website.replace(/^https?:\/\//, "").replace(/\/$/, "")}<ArrowUpRight size={11} /></a>}
+                  {profile.website && <a className="inline-flex min-h-8 items-center gap-1.5 transition-colors hover:text-foreground" href={profile.website} rel="noopener noreferrer ugc" target="_blank"><Globe2 size={12} />{profile.website.replace(/^https?:\/\//, "").replace(/\/$/, "")}<ArrowUpRight size={11} /></a>}
                 </div>
               )}
               <div className="mt-5"><ShareActions isPro={profile.is_pro} username={profile.username} /></div>
@@ -112,7 +114,7 @@ export default async function PublicProfilePage({ params }: ProfilePageProps) {
                     <p className="text-sm leading-6 text-foreground sm:text-[15px]">{ship.body}</p>
                     <div className="mt-3 flex flex-wrap items-center gap-2">
                       <span className="rounded-full border px-2.5 py-1 text-[10px] font-medium" style={{ color: CATEGORY_COLORS[ship.category], borderColor: `${CATEGORY_COLORS[ship.category]}40`, backgroundColor: `${CATEGORY_COLORS[ship.category]}12` }}>{ship.category}</span>
-                      {ship.link && <a className="inline-flex min-h-7 items-center gap-1.5 rounded-full border border-white/[0.08] px-2.5 text-[10px] text-muted transition-colors hover:border-white/[0.16] hover:text-foreground" href={ship.link} rel="noreferrer" target="_blank">View work <ArrowUpRight size={11} /></a>}
+                      {ship.link && <a className="inline-flex min-h-7 items-center gap-1.5 rounded-full border border-white/[0.08] px-2.5 text-[10px] text-muted transition-colors hover:border-white/[0.16] hover:text-foreground" href={ship.link} rel="noopener noreferrer ugc" target="_blank">View work <ArrowUpRight size={11} /></a>}
                     </div>
                   </div>
                 </article>
@@ -125,8 +127,14 @@ export default async function PublicProfilePage({ params }: ProfilePageProps) {
             </div>
           )}
         </section>
-        <p className="mt-10 text-center text-[10px] text-muted">This profile and its ships are visible to anyone with the link.</p>
+        <p className="mt-5 text-center text-[10px] text-muted">This profile and its ships are visible to anyone with the link.</p>
+        <div className="mt-8 flex flex-col items-center gap-2 border-t border-white/[0.07] pt-6 text-center">
+          <p className="text-sm font-medium">Building something of your own?</p>
+          <p className="text-xs text-muted">Keep a gentle record of the work adding up.</p>
+          <Link className="mt-2 inline-flex min-h-11 items-center justify-center rounded-control bg-accent px-4 text-xs font-medium text-white hover:bg-[#7476ff]" href="/login">Join Proof</Link>
+        </div>
       </main>
+      </ProfileSafetyActions>
     </AppShell>
   );
 }

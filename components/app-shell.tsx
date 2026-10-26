@@ -48,7 +48,7 @@ export async function AppShell({ children }: { children: ReactNode }) {
         >
           <Command size={13} />
           <span>Quick actions</span>
-          <kbd className="ml-2 rounded border border-white/[0.1] px-1.5 py-0.5 font-mono text-[10px]">⌘K</kbd>
+          <kbd className="ml-2 rounded border border-white/[0.1] px-1.5 py-0.5 font-mono text-[10px]">Ctrl/⌘K</kbd>
         </button>
       </div>
       <CommandMenu />
@@ -58,10 +58,13 @@ export async function AppShell({ children }: { children: ReactNode }) {
             <ProofMark className="size-6" />
             <span>Proof <span className="px-1 text-white/20">·</span> Small ships add up.</span>
           </Link>
-          <div className="flex items-center gap-5">
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
             <Link href="/welcome" className="transition-colors hover:text-foreground">About Proof</Link>
             <Link href="/profile" className="transition-colors hover:text-foreground">Profile</Link>
             <Link href="/pricing" className="transition-colors hover:text-foreground">Pricing</Link>
+            <Link href="/privacy" className="transition-colors hover:text-foreground">Privacy</Link>
+            <Link href="/terms" className="transition-colors hover:text-foreground">Terms</Link>
+            <Link href="/support" className="transition-colors hover:text-foreground">Support</Link>
           </div>
         </div>
       </footer>
