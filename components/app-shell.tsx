@@ -6,16 +6,24 @@ import { CommandMenu } from "@/components/command-menu";
 import { HeaderAction, MainNavigation } from "@/components/main-navigation";
 import { ProofMark } from "@/components/proof-mark";
 import { createClient } from "@/lib/supabase/server";
+import { getUserSubscription, hasProAccess, needsBillingPortal } from "@/lib/billing";
 
 export async function AppShell({ children }: { children: ReactNode }) {
   const supabase = await createClient();
   let signedIn = false;
+  let hasBilling = false;
+  let isPro = false;
   if (supabase) {
     const { data: { user }, error } = await supabase.auth.getUser();
     if (error && error.name !== "AuthSessionMissingError") {
       console.error("Could not determine the signed-in Proof user.", error);
     }
     signedIn = Boolean(user);
+    if (user) {
+      const subscription = await getUserSubscription(user.id);
+      isPro = hasProAccess(subscription);
+      hasBilling = needsBillingPortal(subscription);
+    }
   }
 
   return (
@@ -26,7 +34,7 @@ export async function AppShell({ children }: { children: ReactNode }) {
             <ProofMark className="size-8 shadow-lg shadow-indigo-950/40" />
             <span className="text-base">proof</span>
           </Link>
-          <MainNavigation />
+          <MainNavigation hasBilling={hasBilling} isPro={isPro} />
           <HeaderAction signedIn={signedIn} />
         </div>
       </header>

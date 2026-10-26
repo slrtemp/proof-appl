@@ -25,7 +25,7 @@ const CATEGORY_ICONS: Record<ShipCategory, LucideIcon> = {
   Learning: BookOpen,
 };
 
-export function Dashboard({ demoProfile, initialShips, isPro, demoMode }: { demoProfile: Profile; initialShips: Ship[]; isPro: boolean; demoMode: boolean }) {
+export function Dashboard({ demoProfile, initialShips, isPro, hasBilling = false, billingNotice, demoMode }: { demoProfile: Profile; initialShips: Ship[]; isPro: boolean; hasBilling?: boolean; billingNotice?: string | null; demoMode: boolean }) {
   const today = new Date().toISOString().slice(0, 10);
   const initialTodayShip = initialShips.find((ship) => ship.shipped_on === today);
   const [ships, setShips] = useState(initialShips);
@@ -341,6 +341,7 @@ export function Dashboard({ demoProfile, initialShips, isPro, demoMode }: { demo
             <p className="mt-4 border-t border-white/[0.07] pt-3 text-[10px] leading-5 text-muted">A gentle record, not a score. Rest is part of the work.</p>
           </section>
 
+          {billingNotice && <p className="rounded-card border border-amber-200/10 bg-amber-200/[0.04] p-4 text-xs leading-5 text-muted" role="status">{billingNotice}</p>}
           {isPro && <BuilderProgressCard progress={builderProgress} />}
           {isPro && <CanopyReportCard ships={ships} progress={builderProgress} today={today} />}
 
@@ -363,18 +364,26 @@ export function Dashboard({ demoProfile, initialShips, isPro, demoMode }: { demo
           </section>
 
           {!isPro && (
-            <Link className="group block rounded-card border border-white/[0.08] bg-[#111113] p-5 transition-colors hover:border-white/[0.14]" href="/settings#plan">
+            <section className="group block rounded-card border border-white/[0.08] bg-[#111113] p-5 transition-colors hover:border-white/[0.14]" aria-labelledby="pro-teaser-title">
               <div className="mb-3 flex items-center justify-between">
-                <span className="inline-flex items-center gap-2 text-xs font-medium"><LockKeyhole size={14} className="text-muted" /> Proof Pro</span>
-                <ArrowUpRight className="text-muted transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" size={14} />
+                <h2 className="inline-flex items-center gap-2 text-xs font-medium" id="pro-teaser-title"><LockKeyhole size={14} className="text-muted" /> Proof Pro</h2>
               </div>
-              <p className="text-xs leading-5 text-muted">See what’s resonating. Make your page yours. When you’re ready.</p>
-            </Link>
+              <p className="text-xs leading-5 text-muted">Get 30/90/365-day analytics, builder XP and levels, a monthly canopy report, extra share-card themes, and the option to remove Proof branding.</p>
+              <p className="mt-3 text-[10px] leading-4 text-muted">{hasBilling ? "Update your payment method or subscription in the billing portal." : demoMode ? "Demo billing needs an account. Create one to explore Pro." : "Choose monthly or yearly billing. Cancel anytime."}</p>
+              <Link className="mt-3 inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-control bg-accent px-3 text-xs font-medium text-white transition-colors hover:bg-[#7476ff]" href={hasBilling ? "/settings#plan" : demoMode ? "/login?next=%2Fpricing" : "/pricing"}>
+                {hasBilling ? "Manage billing" : demoMode ? "Create account to get Pro" : "Get Pro"} <ArrowUpRight size={13} />
+              </Link>
+            </section>
           )}
           {isPro && (
-            <Link className="group flex min-h-11 items-center justify-between rounded-card border border-white/[0.08] bg-surface px-4 text-xs font-medium transition-colors hover:border-white/[0.15]" href="/analytics">
-              View your analytics <ArrowUpRight className="text-muted transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" size={14} />
-            </Link>
+            <>
+              <Link className="group flex min-h-11 items-center justify-between rounded-card border border-white/[0.08] bg-surface px-4 text-xs font-medium transition-colors hover:border-white/[0.15]" href="/analytics">
+                View your analytics <ArrowUpRight className="text-muted transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" size={14} />
+              </Link>
+              {hasBilling && <Link className="group flex min-h-11 items-center justify-between rounded-card border border-white/[0.08] bg-surface px-4 text-xs font-medium transition-colors hover:border-white/[0.15]" href="/settings#plan">
+                Manage billing <ArrowUpRight className="text-muted transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" size={14} />
+              </Link>}
+            </>
           )}
         </aside>
       </div>

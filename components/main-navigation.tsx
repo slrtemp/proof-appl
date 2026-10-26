@@ -4,21 +4,22 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { BarChart3, House, Settings2, Sparkles, UserRound } from "lucide-react";
 
-const links = [
-  { href: "/", label: "Home", icon: <House size={14} /> },
-  { href: "/profile", label: "Profile", icon: <UserRound size={14} /> },
-  { href: "/welcome", label: "About", icon: <Sparkles size={14} /> },
-  { href: "/analytics", label: "Analytics", icon: <BarChart3 size={14} /> },
-  { href: "/settings", label: "Settings", icon: <Settings2 size={14} /> },
-];
-
-export function MainNavigation() {
+export function MainNavigation({ hasBilling = false, isPro = false }: { hasBilling?: boolean; isPro?: boolean } = {}) {
   const pathname = usePathname();
+  const links = [
+    { href: "/", label: "Home", icon: <House size={14} /> },
+    { href: "/profile", label: "Profile", icon: <UserRound size={14} /> },
+    { href: "/welcome", label: "About", icon: <Sparkles size={14} /> },
+    { href: "/analytics", label: "Analytics", icon: <BarChart3 size={14} /> },
+    { href: hasBilling || isPro ? "/settings#plan" : "/pricing", label: hasBilling ? "Manage billing" : isPro ? "Pro access" : "Get Pro", icon: hasBilling || isPro ? <Settings2 size={14} /> : <Sparkles size={14} /> },
+    { href: "/settings", label: "Settings", icon: <Settings2 size={14} /> },
+  ];
 
   return (
     <nav className="order-3 -mx-1 flex w-[calc(100%+0.5rem)] items-center justify-center gap-1 overflow-x-auto border-t border-white/[0.06] py-1 sm:absolute sm:left-1/2 sm:top-1/2 sm:order-none sm:w-auto sm:-translate-x-1/2 sm:-translate-y-1/2 sm:border-0 sm:py-0" aria-label="Main navigation">
       {links.map(({ href, label, icon }) => {
-        const active = pathname === href || (href !== "/" && pathname.startsWith(`${href}/`));
+        const route = href.split("#")[0];
+        const active = pathname === route || (route !== "/" && pathname.startsWith(`${route}/`));
         return (
           <Link
             aria-current={active ? "page" : undefined}

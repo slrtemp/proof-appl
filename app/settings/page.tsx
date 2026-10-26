@@ -5,6 +5,7 @@ import { AppShell } from "@/components/app-shell";
 import { SettingsForm } from "@/components/settings-form";
 import { DEMO_PROFILE } from "@/lib/demo";
 import { createClient } from "@/lib/supabase/server";
+import { getBillingNotice, getUserSubscription, hasProAccess, needsBillingPortal } from "@/lib/billing";
 
 export default async function SettingsPage() {
   const supabase = await createClient();
@@ -24,19 +25,20 @@ export default async function SettingsPage() {
   if (!user) redirect("/login");
   const { data: profile, error } = await supabase
     .from("profiles")
-    .select("id,username,full_name,tagline,bio,location,website,avatar_url,is_pro,custom_domain")
+    .select("id,username,full_name,tagline,bio,location,website,avatar_url,custom_domain")
     .eq("id", user.id)
     .single();
   if (error) {
     console.error("Could not load Proof account settings.", error);
     throw new Error("Could not load account settings.");
   }
+  const subscription = await getUserSubscription(user.id);
 
   return (
     <AppShell>
       <main className="mx-auto max-w-[760px] px-5 py-10 sm:px-8">
         <SettingsHeading />
-        <SettingsForm initial={{ id: profile.id, username: profile.username, fullName: profile.full_name, tagline: profile.tagline ?? "", bio: profile.bio ?? "", location: profile.location ?? "", website: profile.website ?? "", avatarUrl: profile.avatar_url, customDomain: profile.custom_domain ?? "", email: user.email ?? "", isPro: profile.is_pro }} />
+        <SettingsForm initial={{ id: profile.id, username: profile.username, fullName: profile.full_name, tagline: profile.tagline ?? "", bio: profile.bio ?? "", location: profile.location ?? "", website: profile.website ?? "", avatarUrl: profile.avatar_url, customDomain: profile.custom_domain ?? "", email: user.email ?? "", isPro: hasProAccess(subscription), hasBilling: needsBillingPortal(subscription), billingNotice: getBillingNotice(subscription) }} />
       </main>
     </AppShell>
   );

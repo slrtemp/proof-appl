@@ -22,6 +22,8 @@ type SettingsValues = {
   customDomain: string;
   email: string;
   isPro: boolean;
+  billingNotice?: string | null;
+  hasBilling?: boolean;
 };
 
 export function SettingsForm({ initial }: { initial: SettingsValues }) {
@@ -255,9 +257,16 @@ export function SettingsForm({ initial }: { initial: SettingsValues }) {
         <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-muted">Plan & account</p>
         <h2 className="mt-1 text-lg font-medium tracking-[-0.04em]">Your account.</h2>
         <p className="mt-4 text-xs text-muted">Signed in as <span className="text-foreground">{values.email || "Demo builder"}</span></p>
+        {initial.billingNotice && <p className="mt-3 rounded-control border border-amber-200/10 bg-amber-200/[0.04] p-3 text-xs leading-5 text-muted" role="status">{initial.billingNotice}</p>}
         <div className="mt-5 border-t border-white/[0.08] pt-5">
-          <div className="mb-3 flex items-center justify-between gap-3"><div><p className="text-sm font-medium">{values.isPro ? "Proof Pro" : "Proof Free"}</p><p className="mt-1 text-xs text-muted">{values.isPro ? "Your Pro features are active." : "The essentials, always free."}</p></div><span className="rounded-full border border-white/[0.1] px-2.5 py-1 text-[10px] text-muted">{values.isPro ? "ACTIVE" : "FREE"}</span></div>
-          {values.isPro ? <PortalButton /> : <Link className="inline-flex min-h-11 items-center gap-2 rounded-control bg-accent px-4 text-sm font-medium text-white transition-colors hover:bg-[#7476ff]" href="/pricing">Explore Pro <ArrowUpRight size={14} /></Link>}
+          <div className="mb-3 flex items-center justify-between gap-3"><div><p className="text-sm font-medium">{values.isPro ? "Proof Pro" : values.hasBilling ? "Proof Pro · payment needed" : "Proof Free"}</p><p className="mt-1 text-xs text-muted">{values.isPro ? "Your Pro features are active." : values.hasBilling ? "Manage your existing subscription." : "The essentials, always free."}</p></div><span className="rounded-full border border-white/[0.1] px-2.5 py-1 text-[10px] text-muted">{values.isPro ? "ACTIVE" : values.hasBilling ? "ACTION NEEDED" : "FREE"}</span></div>
+          {values.hasBilling ? <PortalButton /> : values.isPro ? <p className="text-xs leading-5 text-muted">Pro access is included with your account.</p> : (
+            <>
+              <p className="mb-3 max-w-xl text-xs leading-5 text-muted">Pro adds 30/90/365-day analytics, builder XP and levels, a monthly canopy report, extra share-card themes, and optional removal of Proof branding.</p>
+              <Link className="inline-flex min-h-11 items-center gap-2 rounded-control bg-accent px-4 text-sm font-medium text-white transition-colors hover:bg-[#7476ff]" href="/pricing">Get Pro <ArrowUpRight size={14} /></Link>
+              {!values.id && <p className="mt-2 text-[10px] text-muted">Demo billing requires an account.</p>}
+            </>
+          )}
           {values.id && <Button className="ml-2" onClick={signOut} type="button" variant="ghost"><LogOut size={14} />Sign out</Button>}
         </div>
       </section>
