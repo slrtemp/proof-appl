@@ -8,6 +8,7 @@ const supabaseUrl = /^https:\/\/[a-z0-9]+\.supabase\.co\/?$/.test(configuredSupa
 
 const nextConfig: NextConfig = {
   env: { NEXT_PUBLIC_SUPABASE_URL: supabaseUrl },
+  images: { localPatterns: [{ pathname: "/api/cards/**" }, { pathname: "/**", search: "" }] },
   poweredByHeader: false,
   async headers() {
     const contentSecurityPolicy = [

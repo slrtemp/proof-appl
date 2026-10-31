@@ -5,7 +5,8 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Award, BarChart3, Check, Palette, Sparkles, TreePine } from "lucide-react";
 
-import { BillingButton, PortalButton } from "@/components/billing-button";
+import { PortalButton } from "@/components/billing-button";
+import { ProWaitlist } from "@/components/pro-waitlist";
 import { Button } from "@/components/ui/button";
 
 const proFeatures = [
@@ -23,7 +24,6 @@ export function PricingPlans({
   isPro,
   initialPlan,
   billingState,
-  checkoutPlan,
   billingNotice,
   hasBilling,
 }: {
@@ -31,7 +31,6 @@ export function PricingPlans({
   isPro: boolean;
   initialPlan: BillingPlan;
   billingState?: string;
-  checkoutPlan?: string;
   billingNotice?: string | null;
   hasBilling: boolean;
 }) {
@@ -47,10 +46,6 @@ export function PricingPlans({
     }, 2000);
     return () => window.clearTimeout(timer);
   }, [billingState, isPro, refreshAttempts, router]);
-
-  const autoStart = checkoutPlan === "monthly" || checkoutPlan === "yearly"
-    ? checkoutPlan === plan
-    : false;
 
   return (
     <>
@@ -97,9 +92,9 @@ export function PricingPlans({
             ))}
           </div>
           <div className="mt-3">
-            {hasBilling ? <PortalButton /> : isPro ? <Button className="w-full" disabled variant="secondary">Pro active</Button> : <BillingButton autoStart={autoStart} plan={plan} signedIn={signedIn} />}
+            {hasBilling ? <PortalButton /> : isPro ? <Button className="w-full" disabled variant="secondary">Pro active</Button> : <ProWaitlist />}
           </div>
-          <p className="mt-2 text-center text-[10px] text-muted">{hasBilling ? "Manage or update your existing subscription." : signedIn ? "Cancel anytime from your billing portal." : "You’ll sign in before checkout. Cancel anytime."}</p>
+          <p className="mt-2 text-center text-[10px] text-muted">{hasBilling ? "Manage or update your existing subscription." : "Pro isn’t open yet. Join the waitlist and we’ll email you once."}</p>
           <ul className="mt-6 space-y-3 text-xs text-muted">{proFeatures.map((feature) => <li className="flex items-start gap-2.5" key={feature.title}><span className="mt-0.5 text-foreground">{feature.icon}</span><span><span className="font-medium text-foreground">{feature.title}</span><span className="mt-0.5 block leading-5">{feature.description}</span></span></li>)}</ul>
         </section>
       </div>

@@ -70,6 +70,9 @@ export function Dashboard({
       setActiveTimeZone(browserTimeZone);
       return;
     }
+    // Switching days mid-session would orphan an entry already saved under the stored timezone's date.
+    const savedToday = todayKey && initialShips.some((ship) => ship.shipped_on === todayKey);
+    if (savedToday && getDateKey(new Date(), browserTimeZone) !== todayKey) return;
     let cancelled = false;
     void fetch("/api/profile/timezone", {
       method: "PUT",
@@ -88,6 +91,7 @@ export function Dashboard({
       if (!cancelled) setError(timezoneError instanceof Error ? timezoneError.message : "Your timezone could not be updated.");
     });
     return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- run once per timezone change using the server snapshot
   }, [activeTimeZone, demoMode]);
 
   useEffect(() => {

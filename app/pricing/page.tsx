@@ -35,7 +35,6 @@ export default async function PricingPage({ searchParams }: { searchParams: Prom
         <PricingPlans
           billingNotice={getBillingNotice(subscription)}
           billingState={params.billing}
-          checkoutPlan={params.checkout}
           hasBilling={needsBillingPortal(subscription)}
           initialPlan={selectedPlan}
           isPro={isPro}

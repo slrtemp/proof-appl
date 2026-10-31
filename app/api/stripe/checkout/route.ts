@@ -13,7 +13,9 @@ export async function POST(request: Request) {
   if (authError || !user) return NextResponse.json({ error: "Sign in before starting a subscription." }, { status: 401 });
 
   const stripe = getStripe();
-  if (!stripe) return NextResponse.json({ error: "Billing is not configured yet." }, { status: 503 });
+  if (!stripe || process.env.PRO_CHECKOUT_ENABLED !== "true") {
+    return NextResponse.json({ error: "Pro is coming soon. Join the waitlist on the pricing page." }, { status: 503 });
+  }
 
   let body: { plan?: unknown };
   try {
