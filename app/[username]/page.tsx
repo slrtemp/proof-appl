@@ -9,6 +9,7 @@ import { AppShell } from "@/components/app-shell";
 import { ProofTree } from "@/components/proof-tree";
 import { ShareActions } from "@/components/share-actions";
 import { ProfileSafetyActions } from "@/components/profile-safety-actions";
+import { ProfileViewBeacon } from "@/components/track-event";
 import { getPublicProfile } from "@/lib/profiles";
 import { dateLabel, getStreakStats } from "@/lib/streaks";
 import { CATEGORY_COLORS } from "@/lib/types";
@@ -47,6 +48,7 @@ export default async function PublicProfilePage({ params }: ProfilePageProps) {
   return (
     <AppShell>
       <ProfileSafetyActions username={profile.username}>
+      <ProfileViewBeacon username={profile.username} />
       <main className="mx-auto max-w-[900px] px-5 py-8 sm:px-8 sm:py-12">
         <Link className="mb-6 inline-flex min-h-10 items-center gap-2 rounded-full border border-white/[0.07] bg-white/[0.02] px-3.5 text-xs text-muted transition-colors hover:border-white/[0.14] hover:text-foreground" href="/">
           <ArrowLeft size={13} /> Back to Proof

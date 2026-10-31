@@ -6,6 +6,7 @@ import Image from "next/image";
 import { Check, Copy, Download, Image as ImageIcon, LockKeyhole } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { trackEvent } from "@/components/track-event";
 
 export function ShareActions({ username, compact = false, isPro = false }: { username: string; compact?: boolean; isPro?: boolean }) {
   const [message, setMessage] = useState("");
@@ -40,6 +41,7 @@ export function ShareActions({ username, compact = false, isPro = false }: { use
       anchor.click();
       URL.revokeObjectURL(url);
       setMessage(`${format === "landscape" ? "Wide" : "Story"} card downloaded.`);
+      trackEvent("card_shared", username);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Could not create this card.");
     } finally {
@@ -53,9 +55,11 @@ export function ShareActions({ username, compact = false, isPro = false }: { use
       if (navigator.clipboard?.write && typeof ClipboardItem !== "undefined") {
         await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
         setMessage("Image copied to clipboard.");
+        trackEvent("card_shared", username);
       } else {
         await navigator.clipboard.writeText(new URL(cardPath(format), window.location.href).toString());
         setMessage("Card link copied.");
+        trackEvent("card_shared", username);
       }
     } catch (copyError) {
       setMessage(copyError instanceof Error ? copyError.message : "Could not copy the card.");

@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { withSentryConfig } from "@sentry/nextjs/config";
 
 // The Supabase URL is public. Fall back to the project URL if the env var is missing or points at supabase.com.
 const configuredSupabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
@@ -7,7 +8,11 @@ const supabaseUrl = /^https:\/\/[a-z0-9]+\.supabase\.co\/?$/.test(configuredSupa
   : "https://ertmrtejmcuvhojyripf.supabase.co";
 
 const nextConfig: NextConfig = {
-  env: { NEXT_PUBLIC_SUPABASE_URL: supabaseUrl },
+  env: {
+    NEXT_PUBLIC_SUPABASE_URL: supabaseUrl,
+    // Vercel blocks NEXT_PUBLIC_ names for sensitive values, so the browser DSN is copied from SENTRY_DSN at build time.
+    NEXT_PUBLIC_SENTRY_DSN: process.env.SENTRY_DSN ?? process.env.NEXT_PUBLIC_SENTRY_DSN ?? "",
+  },
   images: { localPatterns: [{ pathname: "/api/cards/**" }, { pathname: "/**", search: "" }] },
   poweredByHeader: false,
   async headers() {
@@ -17,7 +22,7 @@ const nextConfig: NextConfig = {
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: blob: https:",
       "font-src 'self' data:",
-      "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.stripe.com https://r.stripe.com",
+      "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.stripe.com https://r.stripe.com https://*.sentry.io",
       "frame-src https://js.stripe.com https://hooks.stripe.com",
       "form-action 'self' https://checkout.stripe.com",
       "base-uri 'self'",
@@ -39,4 +44,4 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+export default withSentryConfig(nextConfig, { silent: true, telemetry: false, sourcemaps: { disable: true } });

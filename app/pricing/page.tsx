@@ -18,11 +18,6 @@ export default async function PricingPage({ searchParams }: { searchParams: Prom
   const { data: { user } } = supabase ? await supabase.auth.getUser() : { data: { user: null } };
   const subscription = user ? await getUserSubscription(user.id) : null;
   const isPro = hasProAccess(subscription);
-  const selectedPlan = params.checkout === "monthly" || params.checkout === "yearly"
-    ? params.checkout
-    : params.plan === "monthly"
-      ? "monthly"
-      : "yearly";
 
   return (
     <AppShell>
@@ -36,7 +31,6 @@ export default async function PricingPage({ searchParams }: { searchParams: Prom
           billingNotice={getBillingNotice(subscription)}
           billingState={params.billing}
           hasBilling={needsBillingPortal(subscription)}
-          initialPlan={selectedPlan}
           isPro={isPro}
           signedIn={Boolean(user)}
         />

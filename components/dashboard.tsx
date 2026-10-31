@@ -500,9 +500,9 @@ export function Dashboard({
                 <h2 className="inline-flex items-center gap-2 text-xs font-medium" id="pro-teaser-title"><LockKeyhole size={14} className="text-muted" /> Proof Pro</h2>
               </div>
               <p className="text-xs leading-5 text-muted">Get 30/90/365-day analytics, builder XP and levels, a monthly canopy report, extra share-card themes, and the option to remove Proof branding.</p>
-              <p className="mt-3 text-[10px] leading-4 text-muted">{hasBilling ? "Update your payment method or subscription in the billing portal." : demoMode ? "Demo billing needs an account. Create one to explore Pro." : "Choose monthly or yearly billing. Cancel anytime."}</p>
-              <Link className="mt-3 inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-control bg-accent px-3 text-xs font-medium text-white transition-colors hover:bg-[#7476ff]" href={hasBilling ? "/settings#plan" : demoMode ? "/login?next=%2Fpricing" : "/pricing"}>
-                {hasBilling ? "Manage billing" : demoMode ? "Create account to get Pro" : "Get Pro"} <ArrowUpRight size={13} />
+              <p className="mt-3 text-[10px] leading-4 text-muted">{hasBilling ? "Update your payment method or subscription in the billing portal." : "Pro isn’t open yet. Join the waitlist and we’ll email you once."}</p>
+              <Link className="mt-3 inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-control bg-accent px-3 text-xs font-medium text-white transition-colors hover:bg-[#7476ff]" href={hasBilling ? "/settings#plan" : "/pricing"}>
+                {hasBilling ? "Manage billing" : "Pro coming soon"} <ArrowUpRight size={13} />
               </Link>
             </section>
           )}

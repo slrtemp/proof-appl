@@ -17,24 +17,19 @@ const proFeatures = [
   { icon: <Sparkles size={16} />, title: "No Proof branding", description: "Your page. Your name. Nothing extra." },
 ];
 
-type BillingPlan = "monthly" | "yearly";
-
 export function PricingPlans({
   signedIn,
   isPro,
-  initialPlan,
   billingState,
   billingNotice,
   hasBilling,
 }: {
   signedIn: boolean;
   isPro: boolean;
-  initialPlan: BillingPlan;
   billingState?: string;
   billingNotice?: string | null;
   hasBilling: boolean;
 }) {
-  const [plan, setPlan] = useState<BillingPlan>(initialPlan);
   const [refreshAttempts, setRefreshAttempts] = useState(0);
   const router = useRouter();
 
@@ -73,24 +68,7 @@ export function PricingPlans({
         <section className="relative rounded-card border border-white/[0.1] bg-[#111113] p-6 sm:p-7">
           <span className="absolute right-5 top-5 rounded-full border border-white/[0.08] bg-elevated px-2.5 py-1 text-[10px] font-medium text-muted">FOR THE LONG GAME</span>
           <p className="text-sm font-medium">Pro</p>
-          <div className="mt-5 flex items-baseline gap-1">
-            <span className="text-4xl font-semibold tracking-[-0.07em]">${plan === "monthly" ? "8" : "60"}</span>
-            <span className="text-sm text-muted">/ {plan === "monthly" ? "month" : "year"}</span>
-          </div>
-          <p className="mt-1 text-xs text-muted">{plan === "yearly" ? "Billed yearly · save 37% compared with monthly." : "Billed monthly."}</p>
-          <div className="mt-5 flex items-center gap-1 rounded-control border border-white/[0.08] bg-background p-1" aria-label="Billing frequency">
-            {(["monthly", "yearly"] as const).map((option) => (
-              <button
-                aria-pressed={plan === option}
-                className={`min-h-9 flex-1 rounded px-3 text-xs font-medium transition-colors ${plan === option ? "bg-elevated text-foreground" : "text-muted hover:text-foreground"}`}
-                key={option}
-                onClick={() => setPlan(option)}
-                type="button"
-              >
-                {option === "monthly" ? "Monthly · $8" : "Yearly · $60 · save 37%"}
-              </button>
-            ))}
-          </div>
+          <p className="mt-5 text-sm text-muted">Coming soon. Pricing isn’t final yet.</p>
           <div className="mt-3">
             {hasBilling ? <PortalButton /> : isPro ? <Button className="w-full" disabled variant="secondary">Pro active</Button> : <ProWaitlist />}
           </div>

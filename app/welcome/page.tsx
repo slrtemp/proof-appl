@@ -97,7 +97,7 @@ export default function WelcomePage() {
             ["Do I have to post every day?", "No. Proof is a gentle record, not a score. Rest is part of the work."],
             ["Can I try it before making an account?", "Yes. The demo runs in your browser and its sample log is not sent to a server."],
             ["Who can see my ships?", "Ships on a public profile can be seen by anyone. Your account log is protected by account-level access rules."],
-            ["Can I cancel Pro?", "Yes. You can manage or cancel a subscription through the billing portal."],
+            ["Is there a paid plan?", "Pro is coming soon. Proof is free to use today, and you can join the waitlist on the pricing page."],
           ].map(([question, answer]) => (
             <article className="rounded-card border border-white/[0.08] bg-surface p-4" key={question}><h3 className="text-sm font-medium">{question}</h3><p className="mt-2 text-xs leading-5 text-muted">{answer}</p></article>
           ))}

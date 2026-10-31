@@ -11,7 +11,7 @@ export function MainNavigation({ hasBilling = false, isPro = false }: { hasBilli
     { href: "/profile", label: "Profile", icon: <UserRound size={14} /> },
     { href: "/welcome", label: "About", icon: <Sparkles size={14} /> },
     { href: "/analytics", label: "Analytics", icon: <BarChart3 size={14} /> },
-    { href: hasBilling || isPro ? "/settings#plan" : "/pricing", label: hasBilling ? "Manage billing" : isPro ? "Pro access" : "Get Pro", icon: hasBilling || isPro ? <Settings2 size={14} /> : <Sparkles size={14} /> },
+    { href: hasBilling || isPro ? "/settings#plan" : "/pricing", label: hasBilling ? "Manage billing" : isPro ? "Pro access" : "Pro soon", icon: hasBilling || isPro ? <Settings2 size={14} /> : <Sparkles size={14} /> },
     { href: "/settings", label: "Settings", icon: <Settings2 size={14} /> },
   ];
 
