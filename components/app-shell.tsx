@@ -65,6 +65,7 @@ export async function AppShell({ children }: { children: ReactNode }) {
             <Link href="/privacy" className="transition-colors hover:text-foreground">Privacy</Link>
             <Link href="/terms" className="transition-colors hover:text-foreground">Terms</Link>
             <Link href="/support" className="transition-colors hover:text-foreground">Support</Link>
+            <a href="https://instagram.com/slrtemp" className="transition-colors hover:text-foreground" rel="noopener noreferrer" target="_blank">Follow the founder</a>
             <a href="mailto:support@tryproof.net" className="transition-colors hover:text-foreground">support@tryproof.net</a>
           </div>
         </div>

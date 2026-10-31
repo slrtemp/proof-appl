@@ -20,6 +20,11 @@ export default async function SupportPage({ searchParams }: { searchParams: Prom
           <h2 className="text-sm font-medium">Email Proof support</h2>
           <p className="mt-2 text-xs leading-5 text-muted">Include the page or account email you need help with. Please don’t send passwords or payment-card details.</p>
           <a className="mt-4 inline-flex min-h-11 items-center rounded-control bg-accent px-4 text-xs font-medium text-white hover:bg-[#7476ff]" href="mailto:support@tryproof.net">support@tryproof.net</a>
+          <div className="mt-5 border-t border-white/[0.07] pt-4">
+            <h2 className="text-sm font-medium">Follow the founder</h2>
+            <p className="mt-2 text-xs leading-5 text-muted">Updates on what’s shipping next in Proof, straight from the builder.</p>
+            <a className="mt-3 inline-flex min-h-11 items-center rounded-control border border-white/[0.1] px-4 text-xs font-medium text-foreground hover:border-indigo-200/25 hover:bg-white/[0.04]" href="https://instagram.com/slrtemp" rel="noopener noreferrer" target="_blank">Follow @slrtemp on Instagram</a>
+          </div>
           <p className="mt-5 border-t border-white/[0.07] pt-4 text-xs text-muted">See also <Link className="underline underline-offset-4 hover:text-foreground" href="/privacy">Privacy</Link> and <Link className="underline underline-offset-4 hover:text-foreground" href="/terms">Terms</Link>.</p>
         </section>
       </main>

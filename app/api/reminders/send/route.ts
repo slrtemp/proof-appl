@@ -4,7 +4,7 @@ import { getDateKey } from "@/lib/dates";
 import { getSiteUrl } from "@/lib/site-url";
 import { createAdminClient } from "@/lib/supabase/admin";
 
-export async function POST(request: Request) {
+async function sendReminders(request: Request) {
   const secret = process.env.CRON_SECRET;
   if (!secret || request.headers.get("authorization") !== `Bearer ${secret}`) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
@@ -43,7 +43,8 @@ export async function POST(request: Request) {
     const now = new Date();
     const localDate = getDateKey(now, timezone);
     const localHour = Number(new Intl.DateTimeFormat("en", { timeZone: timezone, hour: "2-digit", hourCycle: "h23" }).format(now));
-    if (localHour !== 9 || reminder.last_sent_on === localDate) continue;
+    // A scheduler that fires a little late should still reach the user; last_sent_on prevents repeats.
+    if (localHour < 9 || localHour > 11 || reminder.last_sent_on === localDate) continue;
 
     const [{ data: ship }, { data: restDay }] = await Promise.all([
       admin.from("ships").select("id").eq("user_id", reminder.user_id).eq("shipped_on", localDate).maybeSingle(),
@@ -80,3 +81,6 @@ export async function POST(request: Request) {
 
   return NextResponse.json({ sent });
 }
+
+export const GET = sendReminders;
+export const POST = sendReminders;

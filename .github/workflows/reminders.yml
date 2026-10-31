@@ -1,0 +1,24 @@
+name: Proof scheduled emails
+
+# Vercel's free plan only allows daily cron jobs, so GitHub runs the hourly check instead.
+# Needs two repository secrets: PROOF_CRON_SECRET (same value as CRON_SECRET in Vercel) and PROOF_SITE_URL.
+on:
+  schedule:
+    - cron: "5 * * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  reminders:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Send daily reminders due this hour
+        env:
+          SITE_URL: ${{ secrets.PROOF_SITE_URL }}
+          CRON_SECRET: ${{ secrets.PROOF_CRON_SECRET }}
+        run: |
+          curl --fail-with-body --silent --show-error --max-time 120 \
+            -X POST "$SITE_URL/api/reminders/send" \
+            -H "Authorization: Bearer $CRON_SECRET"
