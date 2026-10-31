@@ -11,8 +11,10 @@ import { ShareActions } from "@/components/share-actions";
 import { ProfileSafetyActions } from "@/components/profile-safety-actions";
 import { ProfileViewBeacon } from "@/components/track-event";
 import { getPublicProfile } from "@/lib/profiles";
+import { DEMO_PROFILE } from "@/lib/demo";
+import { getProfileTrails } from "@/lib/trails";
 import { dateLabel, getStreakStats } from "@/lib/streaks";
-import { CATEGORY_COLORS } from "@/lib/types";
+import { CATEGORIES, CATEGORY_COLORS } from "@/lib/types";
 
 type ProfilePageProps = { params: Promise<{ username: string }> };
 
@@ -44,6 +46,14 @@ export default async function PublicProfilePage({ params }: ProfilePageProps) {
   const stats = getStreakStats(ships, new Date(), restDays, profile.timezone || "UTC");
   const categoryCount = new Set(ships.map((ship) => ship.category)).size;
   const sortedShips = [...ships].sort((a, b) => b.shipped_on.localeCompare(a.shipped_on) || b.created_at.localeCompare(a.created_at));
+  const recentByCategory = CATEGORIES
+    .map((category) => {
+      const inCategory = sortedShips.filter((ship) => ship.category === category);
+      return { category, count: inCategory.length, latest: inCategory.slice(0, 2) };
+    })
+    .filter((entry) => entry.count > 0)
+    .sort((a, b) => b.latest[0].shipped_on.localeCompare(a.latest[0].shipped_on));
+  const trails = profile.username === DEMO_PROFILE.username ? [] : (await getProfileTrails(profile.id)).filter((trail) => trail.shipCount > 0);
 
   return (
     <AppShell>
@@ -96,6 +106,40 @@ export default async function PublicProfilePage({ params }: ProfilePageProps) {
         <div className="mt-2">
           <ProofTree ships={sortedShips} />
         </div>
+
+        {recentByCategory.length > 0 && (
+          <section className="mt-10" aria-labelledby="recent-heading">
+            <h2 className="text-xl font-medium tracking-[-0.04em]" id="recent-heading">Recent work by category</h2>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              {recentByCategory.map(({ category, count, latest }) => (
+                <div className="rounded-card border border-white/[0.07] bg-gradient-to-r from-[#141418] to-[#111113] p-4" key={category}>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-xs font-medium" style={{ color: CATEGORY_COLORS[category] }}>{category}</span>
+                    <span className="text-[10px] text-muted">{count} {count === 1 ? "ship" : "ships"}</span>
+                  </div>
+                  <ul className="mt-2 space-y-2">
+                    {latest.map((ship) => <li className="text-sm leading-5" key={ship.id}><span className="mr-2 text-[10px] text-muted">{dateLabel(ship.shipped_on)}</span>{ship.body}</li>)}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {trails.length > 0 && (
+          <section className="mt-10" aria-labelledby="trails-heading">
+            <h2 className="text-xl font-medium tracking-[-0.04em]" id="trails-heading">Project trails</h2>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              {trails.map((trail) => (
+                <Link className="rounded-card border border-white/[0.07] bg-gradient-to-r from-[#141418] to-[#111113] p-4 transition-colors hover:border-white/[0.16]" href={`/${profile.username}/trails/${trail.slug}`} key={trail.id}>
+                  <p className="text-sm font-medium">{trail.title}</p>
+                  {trail.description && <p className="mt-1 line-clamp-2 text-xs leading-5 text-muted">{trail.description}</p>}
+                  <p className="mt-2 text-[10px] text-muted">{trail.shipCount} {trail.shipCount === 1 ? "ship" : "ships"}</p>
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
 
         <section className="mt-10" aria-labelledby="timeline-heading">
           <div className="mb-5 flex items-end justify-between gap-3">

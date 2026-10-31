@@ -50,6 +50,11 @@ export default async function SettingsPage() {
         <SettingsHeading />
         <SettingsForm initial={{ id: profile.id, username: profile.username, fullName: profile.full_name, tagline: profile.tagline ?? "", bio: profile.bio ?? "", location: profile.location ?? "", website: profile.website ?? "", avatarUrl: profile.avatar_url, email: user.email ?? "", isPro: hasProAccess(subscription), isPublic: profile.is_public, hasBilling: needsBillingPortal(subscription), billingNotice: getBillingNotice(subscription) }} />
         <ReminderSettings initialEnabled={reminder?.enabled ?? false} initialGoal={reminder?.goal ?? ""} initialRecapEnabled={reminder?.recap_enabled ?? false} />
+        <section className="mt-5 border-t border-white/[0.08] pt-5">
+          <h3 className="text-sm font-medium">Trails and embed</h3>
+          <p className="mt-1 text-xs leading-5 text-muted">Group ships into project trails and add your activity map to a README or website.</p>
+          <Link className="mt-3 inline-flex min-h-11 items-center rounded-control border border-white/[0.1] px-3 text-xs font-medium text-muted hover:text-foreground" href="/settings/trails">Open trails and embed</Link>
+        </section>
       </main>
     </AppShell>
   );
