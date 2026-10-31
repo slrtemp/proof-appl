@@ -10,9 +10,10 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(new URL("/support?reminder=unsubscribe-error", getSiteUrl(request.nextUrl.origin)));
   }
 
+  const kind = request.nextUrl.searchParams.get("kind");
   const { error } = await admin
     .from("account_reminders")
-    .update({ enabled: false, updated_at: new Date().toISOString() })
+    .update(kind === "recap" ? { recap_enabled: false, updated_at: new Date().toISOString() } : { enabled: false, updated_at: new Date().toISOString() })
     .eq("unsubscribe_token", token);
   if (error) {
     console.error("Could not unsubscribe from Proof reminders.", error);

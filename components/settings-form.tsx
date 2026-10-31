@@ -215,7 +215,7 @@ export function SettingsForm({ initial }: { initial: SettingsValues }) {
           </div>
           <SettingsField label="Name" maxLength={60} onChange={(value) => update("fullName", value)} value={values.fullName} />
           <SettingsField label="Username" maxLength={32} onChange={(value) => update("username", value.replace(/^@/, ""))} prefix="@" value={values.username} />
-          <SettingsField label="One-line intro" maxLength={100} onChange={(value) => update("tagline", value)} placeholder="What are you working toward?" value={values.tagline} />
+          <SettingsField label="One-line intro" maxLength={100} onChange={(value) => update("tagline", value)} placeholder="What you do, in one line" value={values.tagline} />
           <div>
             <label className="mb-2 block text-xs text-muted" htmlFor="bio">About you</label>
             <textarea className="min-h-24 w-full resize-y rounded-control border border-white/[0.08] bg-background px-3 py-2.5 text-sm leading-6 placeholder:text-muted/60 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20" id="bio" maxLength={160} onChange={(event) => update("bio", event.target.value)} placeholder="A little more about the work and ideas you care about." value={values.bio} />

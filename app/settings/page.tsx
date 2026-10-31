@@ -36,7 +36,7 @@ export default async function SettingsPage() {
   const subscription = await getUserSubscription(user.id);
   const { data: reminder, error: reminderError } = await supabase
     .from("account_reminders")
-    .select("enabled")
+    .select("enabled,recap_enabled,goal")
     .eq("user_id", user.id)
     .maybeSingle();
   if (reminderError) {
@@ -49,7 +49,7 @@ export default async function SettingsPage() {
       <main className="mx-auto max-w-[760px] px-5 py-10 sm:px-8">
         <SettingsHeading />
         <SettingsForm initial={{ id: profile.id, username: profile.username, fullName: profile.full_name, tagline: profile.tagline ?? "", bio: profile.bio ?? "", location: profile.location ?? "", website: profile.website ?? "", avatarUrl: profile.avatar_url, email: user.email ?? "", isPro: hasProAccess(subscription), isPublic: profile.is_public, hasBilling: needsBillingPortal(subscription), billingNotice: getBillingNotice(subscription) }} />
-        <ReminderSettings initialEnabled={reminder?.enabled ?? false} />
+        <ReminderSettings initialEnabled={reminder?.enabled ?? false} initialGoal={reminder?.goal ?? ""} initialRecapEnabled={reminder?.recap_enabled ?? false} />
       </main>
     </AppShell>
   );

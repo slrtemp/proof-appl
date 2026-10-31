@@ -12,6 +12,7 @@ import { ProofTree } from "@/components/proof-tree";
 import { getBuilderProgress } from "@/lib/gamification";
 import { dateLabel, getStreakStats } from "@/lib/streaks";
 import { getDateKey } from "@/lib/dates";
+import { buildWeeklyRecap, describeConfirmation, describeRecapComparison, formatRecapRange, getShipConfirmation } from "@/lib/recap";
 import type { Profile, Ship, ShipCategory } from "@/lib/types";
 import { CATEGORIES, CATEGORY_COLORS } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -37,7 +38,9 @@ export function Dashboard({
   demoMode,
   timeZone = "UTC",
   todayKey,
+  goal = "",
 }: {
+  goal?: string;
   demoProfile: Profile;
   initialShips: Ship[];
   initialRestDays?: string[];
@@ -57,6 +60,7 @@ export function Dashboard({
   const [category, setCategory] = useState<ShipCategory | "">(initialTodayShip?.category ?? "");
   const [link, setLink] = useState(initialTodayShip?.link ?? "");
   const [toast, setToast] = useState("");
+  const [confirmation, setConfirmation] = useState<string[] | null>(null);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [restSubmitting, setRestSubmitting] = useState(false);
@@ -152,6 +156,8 @@ export function Dashboard({
     [ships],
   );
   const stats = useMemo(() => getStreakStats(ships, new Date(), restDays, activeTimeZone), [ships, restDays, activeTimeZone]);
+  const recap = useMemo(() => buildWeeklyRecap(ships, restDays, { endDate: today, timeZone: activeTimeZone, goal }), [ships, restDays, today, activeTimeZone, goal]);
+  const recapComparison = describeRecapComparison(recap);
   const builderProgress = useMemo(() => getBuilderProgress(ships, stats), [ships, stats]);
   const existingTodayShip = ships.find((ship) => ship.shipped_on === today);
   const isRestDay = restDays.includes(today);
@@ -244,6 +250,7 @@ export function Dashboard({
     setCategory(existingTodayShip ? optimistic.category : "");
     setShowLink(existingTodayShip ? Boolean(normalizedLink) : false);
     setToast(existingTodayShip ? "Today’s ship updated." : "Ship logged. Keep showing up.");
+    setConfirmation(existingTodayShip ? null : describeConfirmation(getShipConfirmation(next, restDays, today, activeTimeZone)));
 
     try {
       if (demoMode) {
@@ -268,6 +275,7 @@ export function Dashboard({
       }
     } catch (submitError) {
       setShips(before);
+      setConfirmation(null);
       setBody(previousForm.body);
       setCategory(previousForm.category);
       setLink(previousForm.link);
@@ -327,6 +335,15 @@ export function Dashboard({
                 </div>
                 <span className="hidden rounded-full border border-white/[0.08] bg-black/10 px-2.5 py-1.5 text-[10px] text-muted sm:block">Ctrl + Enter</span>
               </div>
+              {confirmation && (
+                <div className="mb-4 rounded-control border border-emerald-200/15 bg-emerald-200/[0.04] p-4" role="status">
+                  <div className="flex items-start justify-between gap-3">
+                    <p className="text-sm font-medium text-emerald-100">Logged for today.</p>
+                    <button aria-label="Dismiss" className="text-muted hover:text-foreground" onClick={() => setConfirmation(null)} type="button"><X size={14} /></button>
+                  </div>
+                  <ul className="mt-2 space-y-1 text-xs leading-5 text-muted">{confirmation.map((line) => <li key={line}>{line}</li>)}</ul>
+                </div>
+              )}
               <form onSubmit={submitShip}>
                 <label className="sr-only" htmlFor="ship-body">What moved forward today?</label>
                 {isRestDay && <p className="mb-3 rounded-control border border-white/[0.08] bg-background p-3 text-xs leading-5 text-muted" role="status">Today is marked as a rest day. You can remove it below if you want to log a ship instead.</p>}
@@ -472,7 +489,17 @@ export function Dashboard({
             </div>
           </section>
 
-          {billingNotice && <p className="rounded-card border border-amber-200/10 bg-amber-200/[0.04] p-4 text-xs leading-5 text-muted" role="status">{billingNotice}</p>}
+          <section className="rounded-card border border-white/[0.08] bg-surface p-4" aria-label="Last 7 days">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.17em] text-indigo-200/75">Last 7 days</p>
+            <p className="mt-1 text-[11px] text-muted">{formatRecapRange(recap)}</p>
+            <p className="mt-2 text-sm font-medium">{recap.total} {recap.total === 1 ? "ship" : "ships"} on {recap.activeDays} {recap.activeDays === 1 ? "day" : "days"}</p>
+            {recap.byCategory.length > 0 && <p className="mt-1 text-xs leading-5 text-muted">{recap.byCategory.map((entry) => `${entry.category} ${entry.count}`).join(" · ")}</p>}
+            {recapComparison && <p className="mt-1 text-xs text-muted">{recapComparison}</p>}
+            <p className="mt-1 text-xs text-muted">Best streak: {recap.bestStreak} days</p>
+            {recap.goalLine ? <p className="mt-2 text-xs leading-5 text-foreground/80">{recap.goalLine}</p> : !demoMode && <Link className="mt-2 inline-block text-xs text-indigo-200/80 hover:text-indigo-100" href="/settings">Add a goal in Settings</Link>}
+          </section>
+
+          {billingNotice &&  <p className="rounded-card border border-amber-200/10 bg-amber-200/[0.04] p-4 text-xs leading-5 text-muted" role="status">{billingNotice}</p>}
           {isPro && <BuilderProgressCard progress={builderProgress} />}
           {isPro && <CanopyReportCard ships={ships} progress={builderProgress} today={today} />}
 

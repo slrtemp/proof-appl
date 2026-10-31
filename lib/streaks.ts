@@ -1,13 +1,13 @@
 import type { Ship, StreakStats } from "@/lib/types";
 import { getDateKey } from "@/lib/dates";
 
-function shiftDate(day: string, offset: number): string {
+export function shiftDate(day: string, offset: number): string {
   const date = new Date(`${day}T12:00:00.000Z`);
   date.setUTCDate(date.getUTCDate() + offset);
   return date.toISOString().slice(0, 10);
 }
 
-export function getStreakStats(ships: Ship[], today = new Date(), restDays: string[] = [], timeZone = "UTC"): StreakStats {
+export function getStreakStats(ships: Pick<Ship, "shipped_on">[], today = new Date(), restDays: string[] = [], timeZone = "UTC"): StreakStats {
   const days = new Set([...ships.map((ship) => ship.shipped_on), ...restDays]);
   const todayKey = getDateKey(today, timeZone);
   const startingDay = days.has(todayKey) ? todayKey : shiftDate(todayKey, -1);

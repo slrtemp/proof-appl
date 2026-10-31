@@ -41,6 +41,7 @@ export default async function HomePage() {
         console.error("Could not load the signed-in Proof plan.", subscriptionError);
         throw new Error("Could not load your Proof plan.");
       }
+      const { data: reminder } = await supabase.from("account_reminders").select("goal").eq("user_id", user.id).maybeSingle();
       const typedSubscription = subscription as SubscriptionRecord | null;
       const isPro = hasProAccess(typedSubscription);
       const timezone = profile.timezone || "UTC";
@@ -50,6 +51,7 @@ export default async function HomePage() {
             billingNotice={getBillingNotice(typedSubscription)}
             demoMode={false}
             demoProfile={{ ...(profile as Profile), is_pro: isPro }}
+            goal={reminder?.goal ?? ""}
             hasBilling={needsBillingPortal(typedSubscription)}
             initialShips={(ships ?? []) as Ship[]}
             initialRestDays={(restDays ?? []).map((restDay) => restDay.rest_on)}
